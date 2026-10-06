@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your S.C.A.L.E. dashboard</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/app.css">
+<style>
+  .pane{display:none} .pane.on{display:block}
+  .auth{max-width:420px;margin:90px auto;text-align:center}
+  .auth .card{text-align:left}
+  .field{display:block;margin-bottom:14px}
+  .field span{display:block;font-size:12.5px;color:var(--dim);margin-bottom:6px;
+              letter-spacing:.04em}
+  .field input{width:100%;background:var(--panel);color:var(--text);
+    border:1px solid var(--line-bright);border-radius:9px;padding:12px 14px;font-size:15px;
+    font-family:var(--body)}
+  .field input:focus{outline:2px solid var(--amber);outline-offset:1px;border-color:transparent}
+  .full{width:100%;justify-content:center;display:flex;align-items:center}
+  .msg{font-size:13.5px;color:var(--muted);margin-top:14px}
+  .msg.good{color:var(--good)}
+  .bar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+       margin-bottom:20px}
+  .ghost{background:var(--surface);color:var(--text);border:1px solid var(--line-bright)}
+  .delta{font-family:var(--mono);font-size:13px;padding:4px 10px;border-radius:100px;
+         border:1px solid var(--line-bright)}
+  .delta.up{color:var(--good);border-color:rgba(74,222,128,.4)}
+  .delta.down{color:var(--bad);border-color:rgba(255,122,122,.4)}
+  .delta.flat{color:var(--dim)}
+  .trend{width:100%;height:92px;display:block}
+  .act.done .t{text-decoration:line-through;opacity:.5}
+  .act.done .d{opacity:.45}
+  .tick{appearance:none;width:17px;height:17px;border:1.5px solid var(--line-bright);
+        border-radius:5px;cursor:pointer;background:var(--panel);margin-top:3px;flex:none}
+  .tick:checked{background:var(--warm);border-color:transparent}
+  .act{grid-template-columns:auto auto 1fr auto}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <div class="logo">S<b>.</b>C<b>.</b>A<b>.</b>L<b>.</b>E<b>.</b></div>
+    <button class="btn ghost" id="signout" style="display:none;padding:8px 14px">Sign out</button>
+  </div>
+</header>
+
+<!-- ---------------------------------------------------------- signed out -->
+<section class="pane auth" id="paneAuth">
+  <div class="card">
+    <div class="sec-h">Sign in</div>
+    <p class="lead">We email you a link. No password to forget.</p>
+    <form id="authForm">
+      <label class="field"><span>Email</span>
+        <input id="email" type="email" required autocomplete="email" placeholder="you@yourbusiness.com">
+      </label>
+      <button class="btn btn-pri full" type="submit" id="authGo">Email me a link</button>
+    </form>
+    <p class="msg" id="authMsg"></p>
+  </div>
+</section>
+
+<!-- ------------------------------------------------------ no business yet -->
+<section class="pane" id="paneSetup">
+  <div class="wrap" style="max-width:520px;margin-top:70px">
+    <div class="card">
+      <div class="sec-h">One question before we start</div>
+      <p class="lead">The Scan is stage one, and every engagement starts there.</p>
+      <form id="setupForm">
+        <label class="field"><span>Business name</span>
+          <input id="bizName" required placeholder="Acme Dental"></label>
+        <label class="field"><span>Website</span>
+          <input id="bizUrl" required inputmode="url" placeholder="acmedental.com"></label>
+        <button class="btn btn-pri full" type="submit" id="setupGo">Run my first scan</button>
+      </form>
+      <p class="msg" id="setupMsg"></p>
+    </div>
+  </div>
+</section>
+
+<!-- ------------------------------------------------------------ dashboard -->
+<section class="pane" id="paneDash">
+  <div class="wrap" style="padding-top:30px">
+
+    <div class="bar">
+      <div>
+        <div style="font-family:var(--display);font-size:20px;font-weight:600" id="dashName"></div>
+        <div style="font-size:13px;color:var(--dim)" id="dashUrl"></div>
+      </div>
+      <button class="btn btn-pri" id="rescan">Re-scan</button>
+    </div>
+
+    <div class="card">
+      <div class="headline">
+        <div class="bigscore" id="dOverall">&mdash;</div>
+        <div class="who">
+          <div class="h" id="dVerdict">&nbsp;</div>
+          <div class="s" id="dWhen">&nbsp;</div>
+        </div>
+        <div id="dDelta"></div>
+      </div>
+      <div class="stages" id="dStages"></div>
+    </div>
+
+    <div class="card" id="trendCard" style="display:none">
+      <div class="sec-h">Your trajectory</div>
+      <p class="lead">This is the product. One number is a snapshot; the line is proof.</p>
+      <svg class="trend" id="trend" viewBox="0 0 600 92" preserveAspectRatio="none" aria-label="Score over time"></svg>
+    </div>
+
+    <div class="card">
+      <div class="sec-h">The five dimensions</div>
+      <div class="dims" id="dDims"></div>
+      <div class="locked" id="dMomentum" style="margin-top:16px;display:none">
+        <b>Momentum needs a second scan.</b> Nothing to measure against yet.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sec-h">Fix these first</div>
+      <p class="lead">Tick them off. What you dismiss will not be raised again.</p>
+      <div class="actions" id="dActions"></div>
+    </div>
+
+    <div class="err" id="dErr"></div>
+  </div>
+</section>
+
+<!-- Vendored, not loaded from a CDN. A paid product should not stop working
+     because jsdelivr has a bad afternoon, and it keeps the dependency pinned
+     to something reviewed rather than whatever "@2" resolves to today. -->
+<script src="/assets/vendor/supabase.js"></script>
+<script src="/assets/config.js"></script>
+<script>
+const sb = supabase.createClient(window.SCALE_CONFIG.supabaseUrl, window.SCALE_CONFIG.supabaseKey);
+
+const STAGES = [['S','Scan','visibility'],['C','Clarify','clarity'],['A','Amplify','structure'],
+                ['L','Leverage','authority'],['E','Evaluate','momentum']];
+const LABEL = {visibility:'Visibility',clarity:'Clarity',structure:'Structure',
+               authority:'Authority',momentum:'Momentum'};
+const $ = (id) => document.getElementById(id);
+const show = (id) => { document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
+                       $(id).classList.add('on'); };
+const esc = (s) => String(s==null?'':s).replace(/[&<>"']/g,
+  c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function colorFor(v){ if(typeof v!=='number') return 'var(--line-bright)';
+  return v>=80?'var(--good)':v>=55?'var(--mid)':'var(--bad)'; }
+function verdictFor(v){ return v>=85?'Strong. AI systems can read you clearly.'
+  : v>=70?'Solid foundation, with real gaps worth closing.'
+  : v>=50?'Readable, but you are leaving authority on the table.'
+  : 'AI systems are struggling to understand this business.'; }
+
+let BIZ = null;
+
+// ---------------------------------------------------------------- auth ----
+$('authForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = $('authGo'); btn.disabled = true; btn.textContent = 'Sending…';
+  const { error } = await sb.auth.signInWithOtp({
+    email: $('email').value.trim(),
+    options: { emailRedirectTo: window.location.origin + '/app/' }
+  });
+  $('authMsg').className = 'msg' + (error ? '' : ' good');
+  $('authMsg').textContent = error ? error.message : 'Check your email for the link.';
+  btn.disabled = false; btn.textContent = 'Email me a link';
+});
+
+$('signout').addEventListener('click', async () => {
+  await sb.auth.signOut(); location.reload();
+});
+
+// --------------------------------------------------------------- setup ----
+$('setupForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = $('setupGo'); btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>Setting up';
+  const { data: { user } } = await sb.auth.getUser();
+  const { data, error } = await sb.from('businesses')
+    .insert({ owner_id: user.id, name: $('bizName').value.trim(),
+              website_url: $('bizUrl').value.trim() })
+    .select().single();
+  if (error) {
+    $('setupMsg').textContent = error.message;
+    btn.disabled = false; btn.textContent = 'Run my first scan'; return;
+  }
+  BIZ = data;
+  await runScan(true);
+});
+
+// ---------------------------------------------------------------- scan ----
+async function runScan(firstTime) {
+  const btn = firstTime ? $('setupGo') : $('rescan');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Scanning';
+  $('dErr').classList.remove('on');
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    const r = await fetch('/api/scan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json',
+                 'Authorization': 'Bearer ' + session.access_token },
+      body: JSON.stringify({ business_id: BIZ.id, trigger: firstTime ? 'onboarding' : 'manual' })
+    });
+    const out = await r.json();
+    if (!r.ok) throw new Error(out.error || 'Scan failed');
+    await loadDash();
+  } catch (err) {
+    $('dErr').textContent = err.message; $('dErr').classList.add('on');
+    show('paneDash');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = firstTime ? 'Run my first scan' : 'Re-scan';
+  }
+}
+$('rescan').addEventListener('click', () => runScan(false));
+
+// ----------------------------------------------------------- dashboard ----
+async function loadDash() {
+  const { data: scans } = await sb.from('scans')
+    .select('id, overall_score, scores, findings, started_at, status')
+    .eq('business_id', BIZ.id).eq('status','complete')
+    .order('started_at', { ascending: false }).limit(12);
+
+  const { data: acts } = await sb.from('actions')
+    .select('id, title, detail, impact, status')
+    .eq('business_id', BIZ.id).order('impact', { ascending: false });
+
+  $('dashName').textContent = BIZ.name;
+  $('dashUrl').textContent = BIZ.website_url;
+
+  const latest = scans && scans[0];
+  if (!latest) { show('paneDash'); return; }
+
+  $('dOverall').textContent = latest.overall_score ?? '—';
+  $('dVerdict').textContent = verdictFor(latest.overall_score ?? 0);
+  $('dWhen').textContent = 'Scanned ' + new Date(latest.started_at).toLocaleDateString(
+    undefined, { day:'numeric', month:'short', year:'numeric' });
+
+  // Delta against the previous scan -- the thing a returning customer looks
+  // for before anything else on this page.
+  const prev = scans[1];
+  if (prev && typeof prev.overall_score === 'number') {
+    const d = latest.overall_score - prev.overall_score;
+    const cls = d > 0 ? 'up' : d < 0 ? 'down' : 'flat';
+    $('dDelta').innerHTML = `<span class="delta ${cls}">${d>0?'+':''}${d} since last scan</span>`;
+  } else $('dDelta').innerHTML = '';
+
+  const sc = latest.scores || {};
+  $('dStages').innerHTML = STAGES.map(([l,w,dim]) =>
+    `<div class="st ${typeof sc[dim]==='number'?'done':''}">
+       <div class="l">${l}</div><div class="w">${w}</div></div>`).join('');
+
+  $('dDims').innerHTML = STAGES.map(([l,w,dim]) => {
+    const v = sc[dim], has = typeof v === 'number';
+    return `<div class="dim">
+      <div><div class="n">${LABEL[dim]}</div><div class="stage">${w}</div></div>
+      <div class="track"><div class="fill" style="width:${has?v:0}%;background:${colorFor(v)}"></div></div>
+      <div class="v ${has?'':'null'}">${has?v:'—'}</div></div>`;
+  }).join('');
+  $('dMomentum').style.display = typeof sc.momentum === 'number' ? 'none' : 'block';
+
+  drawTrend(scans.slice().reverse());
+
+  $('dActions').innerHTML = (acts && acts.length)
+    ? acts.map(a => `<div class="act ${a.status==='done'?'done':''}" data-id="${a.id}">
+        <input class="tick" type="checkbox" ${a.status==='done'?'checked':''} aria-label="Mark done">
+        <div class="sev ${a.impact>=4?'high':a.impact>=3?'medium':'low'}"></div>
+        <div><div class="t">${esc(a.title)}</div><div class="d">${esc(a.detail||'')}</div></div>
+        <div class="imp">${'●'.repeat(a.impact||1)}</div></div>`).join('')
+    : '<div class="empty">Nothing outstanding. Every check passed.</div>';
+
+  show('paneDash');
+}
+
+// Level over time -> a line. Only drawn with two or more points, because a
+// single dot is not a trajectory and drawing one implies it is.
+function drawTrend(scans) {
+  const pts = scans.filter(s => typeof s.overall_score === 'number');
+  if (pts.length < 2) { $('trendCard').style.display = 'none'; return; }
+  $('trendCard').style.display = 'block';
+
+  const W = 600, H = 92, pad = 10;
+  const xs = (i) => pad + (i * (W - pad*2)) / (pts.length - 1);
+  const ys = (v) => H - pad - ((v / 100) * (H - pad*2));
+  const d = pts.map((p,i) => `${i?'L':'M'}${xs(i).toFixed(1)} ${ys(p.overall_score).toFixed(1)}`).join('');
+  const area = d + `L${xs(pts.length-1).toFixed(1)} ${H-pad}L${pad} ${H-pad}Z`;
+
+  $('trend').innerHTML = `
+    <defs><linearGradient id="tg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffb454" stop-opacity=".30"/>
+      <stop offset="1" stop-color="#ffb454" stop-opacity="0"/></linearGradient></defs>
+    <path d="${area}" fill="url(#tg)"/>
+    <path d="${d}" fill="none" stroke="#ffb454" stroke-width="2"
+          stroke-linejoin="round" stroke-linecap="round"/>
+    ${pts.map((p,i)=>`<circle cx="${xs(i).toFixed(1)}" cy="${ys(p.overall_score).toFixed(1)}"
+       r="3" fill="#0b0f16" stroke="#ffb454" stroke-width="2"><title>${p.overall_score} on ${
+       new Date(p.started_at).toLocaleDateString()}</title></circle>`).join('')}`;
+}
+
+// Ticking an action writes straight through; RLS allows the status update but
+// not inventing rows, so this cannot be used to forge a cleaner list.
+$('dActions').addEventListener('change', async (e) => {
+  const box = e.target.closest('.tick'); if (!box) return;
+  const row = box.closest('.act');
+  row.classList.toggle('done', box.checked);
+  await sb.from('actions').update({
+    status: box.checked ? 'done' : 'open',
+    completed_at: box.checked ? new Date().toISOString() : null
+  }).eq('id', row.dataset.id);
+});
+
+// ----------------------------------------------------------------- boot ---
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { show('paneAuth'); return; }
+  $('signout').style.display = 'block';
+
+  const { data: list } = await sb.from('businesses')
+    .select('*').order('created_at', { ascending: true }).limit(1);
+  if (!list || !list.length) { show('paneSetup'); return; }
+  BIZ = list[0];
+  await loadDash();
+})();
+</script>
+</body>
+</html>

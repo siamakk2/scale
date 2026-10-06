@@ -33,6 +33,25 @@ function admin() {
   );
 }
 
+// The caller's own client, carrying their JWT. Reads through this are subject
+// to RLS, which is the point: it is how we establish that the person asking
+// actually owns the business they named.
+//
+// Without this the endpoint takes a business_id from the body and scans it, so
+// anyone could trigger scans against any account, burn its rate limit and read
+// its findings back out of the response. The service role is used for the
+// writes only, after ownership has been proven.
+function asCaller(req) {
+  const h = req.headers && (req.headers.authorization || req.headers.Authorization);
+  const token = h && /^Bearer\s+(.+)$/i.test(h) ? h.replace(/^Bearer\s+/i, '') : null;
+  if (!token) return null;
+  return createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_PUBLISHABLE_KEY,
+    { auth: { persistSession: false }, global: { headers: { Authorization: 'Bearer ' + token } } }
+  );
+}
+
 function normalizeUrl(raw) {
   let url = String(raw || '').trim();
   if (!url) return null;
@@ -79,11 +98,17 @@ module.exports = async function handler(req, res) {
   const businessId = body && body.business_id;
   if (!businessId) return res.status(400).json({ error: 'business_id required' });
 
-  const db = admin();
+  const caller = asCaller(req);
+  if (!caller) return res.status(401).json({ error: 'Sign in to run a scan.' });
 
-  const { data: biz, error: bizErr } = await db
+  // Read through the caller's own client: RLS returns nothing unless they own
+  // this business, so a miss is indistinguishable from "does not exist" --
+  // which is also what we want, since a different error would confirm the id.
+  const { data: biz, error: bizErr } = await caller
     .from('businesses').select('id, website_url, plan').eq('id', businessId).single();
   if (bizErr || !biz) return res.status(404).json({ error: 'Business not found' });
+
+  const db = admin();
 
   const url = normalizeUrl(biz.website_url);
   if (!url) return res.status(400).json({ error: 'That website address cannot be scanned.' });

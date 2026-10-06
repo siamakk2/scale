@@ -1,0 +1,7 @@
+{
+  "name": "scale",
+  "version": "0.1.0",
+  "private": true,
+  "description": "S.C.A.L.E. — Siamak Kalhor's consulting method as self-serve software",
+  "dependencies": { "@supabase/supabase-js": "^2.45.0" }
+}

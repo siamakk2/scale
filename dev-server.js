@@ -16,7 +16,7 @@ http.createServer(async (req,res)=>{
     });
     return;
   }
-  if(p==='/')p='/index.html';
+  if(p.endsWith('/'))p+='index.html';
   const f=path.join(__dirname,p);
   if(!fs.existsSync(f)){res.writeHead(404).end('not found');return;}
   res.setHeader('Content-Type',TYPES[path.extname(f)]||'application/octet-stream');
