@@ -38,6 +38,33 @@
         border-radius:5px;cursor:pointer;background:var(--panel);margin-top:3px;flex:none}
   .tick:checked{background:var(--warm);border-color:transparent}
   .act{grid-template-columns:auto auto 1fr auto}
+  .auth{padding:0 16px}
+  /* billing */
+  .planbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .badge{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;
+         padding:5px 11px;border-radius:100px;border:1px solid var(--line-bright);color:var(--dim)}
+  .badge.paid{color:var(--amber);border-color:rgba(255,180,84,.5);background:rgba(255,180,84,.08)}
+  .sites{background:var(--panel);color:var(--text);border:1px solid var(--line-bright);border-radius:9px;
+         padding:8px 10px;font-family:var(--body);font-size:14px;max-width:240px}
+  .plans{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+  .plan{border:1px solid var(--line);border-radius:14px;padding:18px;background:var(--panel)}
+  .plan.cur{border-color:var(--line-bright)}
+  .plan.best{border-color:rgba(255,180,84,.55);box-shadow:0 0 0 1px rgba(255,180,84,.18)}
+  .plan h4{font-family:var(--display);font-size:17px;margin-bottom:4px}
+  .plan .pr{font-family:var(--display);font-size:28px;font-weight:700}
+  .plan .pr small{font-size:13px;color:var(--dim);font-weight:500}
+  .plan ul{list-style:none;padding:0;margin:12px 0 14px}
+  .plan li{font-size:13.5px;color:var(--muted);padding:3px 0 3px 18px;position:relative}
+  .plan li::before{content:'✓';position:absolute;left:0;color:var(--good)}
+  .plan .btn{width:100%;justify-content:center;display:flex}
+  .fine{font-size:12px;color:var(--dim);margin-top:12px;line-height:1.6}
+  .fine a{color:var(--amber)}
+  .notice{border:1px solid rgba(74,222,128,.4);background:rgba(74,222,128,.07);color:var(--text);
+          border-radius:12px;padding:14px 16px;margin-bottom:16px;font-size:14.5px}
+  .notice.warn{border-color:rgba(255,180,84,.45);background:rgba(255,180,84,.07)}
+  .more{margin-top:12px;border:1px dashed var(--line-bright);border-radius:11px;padding:14px 16px;
+        font-size:14px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+  @media(max-width:760px){.plans{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -69,7 +96,7 @@
 <section class="pane" id="paneSetup">
   <div class="wrap" style="max-width:520px;margin-top:70px">
     <div class="card">
-      <div class="sec-h">One question before we start</div>
+      <div class="sec-h" id="setupTitle">One question before we start</div>
       <p class="lead">The Scan is stage one, and every engagement starts there.</p>
       <form id="setupForm">
         <label class="field"><span>Business name</span>
@@ -87,13 +114,21 @@
 <section class="pane" id="paneDash">
   <div class="wrap" style="padding-top:30px">
 
+    <div id="notice"></div>
     <div class="bar">
       <div>
         <div style="font-family:var(--display);font-size:20px;font-weight:600" id="dashName"></div>
         <div style="font-size:13px;color:var(--dim)" id="dashUrl"></div>
       </div>
-      <button class="btn btn-pri" id="rescan">Re-scan</button>
+      <div class="planbar">
+        <select class="sites" id="siteSel" aria-label="Choose website" style="display:none"></select>
+        <button class="btn ghost" id="addSite" style="display:none;padding:9px 14px">+ Add a website</button>
+        <span class="badge" id="planBadge">Free</span>
+        <button class="btn ghost" id="billingBtn" style="display:none;padding:9px 14px">Manage billing</button>
+        <button class="btn btn-pri" id="rescan">Re-scan</button>
+      </div>
     </div>
+
 
     <div class="card">
       <div class="headline">
@@ -125,6 +160,16 @@
       <div class="sec-h">Fix these first</div>
       <p class="lead">Tick them off. What you dismiss will not be raised again.</p>
       <div class="actions" id="dActions"></div>
+      <div id="dMore"></div>
+    </div>
+
+    <div class="card" id="upgradeCard" style="display:none">
+      <div class="sec-h">Keep the line moving</div>
+      <p class="lead" id="upgradeLead">Free includes one scan every 30 days and your top five fixes.</p>
+      <div class="plans" id="plansGrid"></div>
+      <p class="fine">Prices in USD. Paid plans are billed monthly and <b>renew automatically until you cancel</b>.
+        Cancel any time in <i>Manage billing</i>; you keep the plan until the end of the period you paid for.
+        See the <a href="/terms#plans">Terms</a>.</p>
     </div>
 
     <div class="err" id="dErr"></div>
@@ -150,6 +195,8 @@ function store(k, v){ try { v == null ? localStorage.removeItem(k) : localStorag
 function recall(k){ try { return localStorage.getItem(k); } catch(e) { return null; } }
 (function(){
   try { const s = new URLSearchParams(location.search).get('site'); if (s) store('scale_site', s.trim().slice(0,200)); } catch(e) {}
+  // Plan chosen on the pricing section survives sign-in and setup, then opens checkout.
+  try { const p = new URLSearchParams(location.search).get('plan'); if (p === 'growth' || p === 'scale') store('scale_plan', p); } catch(e) {}
 })();
 
 const STAGES = [['S','Scan','visibility'],['C','Clarify','clarity'],['A','Amplify','structure'],
@@ -169,7 +216,76 @@ function verdictFor(v){ return v>=85?'Strong. AI systems can read you clearly.'
   : v>=50?'Readable, but you are leaving authority on the table.'
   : 'AI systems are struggling to understand this business.'; }
 
-let BIZ = null;
+let BIZ = null, BIZLIST = [], ME = null;
+
+// ------------------------------------------------------------- billing ----
+async function api(path, opts = {}) {
+  const { data: { session } } = await sb.auth.getSession();
+  const r = await fetch(path, { ...opts, headers: { 'Content-Type': 'application/json',
+    ...(session ? { 'Authorization': 'Bearer ' + session.access_token } : {}), ...(opts.headers || {}) } });
+  let out = {}; try { out = await r.json(); } catch (e) {}
+  return { ok: r.ok, status: r.status, out };
+}
+function notice(html, warn) {
+  $('notice').innerHTML = html ? `<div class="notice ${warn ? 'warn' : ''}">${html}</div>` : '';
+}
+const FEATURES = {
+  free:   ['1 website', 'One scan every 30 days', 'Your top 5 fixes', 'Score history'],
+  growth: ['1 website', 'Rescan any time', 'The full ranked fix list', 'Automatic monthly scan'],
+  scale:  ['Up to 5 websites', 'Rescan any time', 'The full ranked fix list', 'Automatic monthly scans'],
+};
+async function loadMe() {
+  const r = await api('/api/me');
+  if (!r.ok) return;
+  ME = r.out;
+  const paid = ME.plan !== 'free';
+  $('planBadge').textContent = ME.limits.name + ' plan';
+  $('planBadge').classList.toggle('paid', paid);
+  $('billingBtn').style.display = ME.billing && ME.billing.has_customer && ME.billing.status !== 'none' ? 'inline-flex' : 'none';
+  $('addSite').style.display = BIZLIST.length && BIZLIST.length < ME.limits.sites ? 'inline-flex' : 'none';
+  $('upgradeCard').style.display = paid ? 'none' : 'block';
+  if (ME.billing && ME.billing.cancel_at_period_end && ME.billing.renews) {
+    notice(`Your ${esc(ME.limits.name)} plan is set to end on ${new Date(ME.billing.renews).toLocaleDateString(
+      undefined,{month:'long',day:'numeric'})}. You can resume it in <b>Manage billing</b>.`, true);
+  }
+  if (ME.billing && ME.billing.status === 'past_due') {
+    notice('Your last payment didn\'t go through. Update your card in <b>Manage billing</b> to keep your plan.', true);
+  }
+  $('plansGrid').innerHTML = ['free','growth','scale'].map(k => {
+    const P = ME.plans[k], cur = k === ME.plan;
+    const btn = cur ? '<button class="btn ghost" disabled>Your plan</button>'
+      : k === 'free' ? '' : `<button class="btn ${k==='growth'?'btn-pri':'ghost'}" data-plan="${k}">Upgrade to ${P.name}</button>`;
+    return `<div class="plan ${cur?'cur':''} ${k==='growth'?'best':''}"><h4>${P.name}</h4>
+      <div class="pr">$${P.price}<small>${P.price ? ' / month' : ''}</small></div>
+      <ul>${FEATURES[k].map(f=>`<li>${f}</li>`).join('')}</ul>${btn}</div>`;
+  }).join('');
+}
+$('plansGrid').addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-plan]'); if (!b) return;
+  b.disabled = true; b.innerHTML = '<span class="spin"></span>Opening checkout';
+  const r = await api('/api/billing/checkout', { method: 'POST', body: JSON.stringify({ plan: b.dataset.plan }) });
+  if (r.ok && r.out.url) { location.href = r.out.url; return; }
+  notice(esc(r.out.error || 'Checkout could not start. Please try again.'), true);
+  b.disabled = false; b.textContent = 'Upgrade to ' + ME.plans[b.dataset.plan].name;
+});
+$('billingBtn').addEventListener('click', async () => {
+  const b = $('billingBtn'); b.disabled = true;
+  const r = await api('/api/billing/portal', { method: 'POST' });
+  if (r.ok && r.out.url) { location.href = r.out.url; return; }
+  notice(esc(r.out.error || 'Billing could not open. Please try again.'), true); b.disabled = false;
+});
+$('siteSel').addEventListener('change', async () => {
+  BIZ = BIZLIST.find(b => b.id === $('siteSel').value) || BIZ;
+  store('scale_biz', BIZ.id); await loadDash();
+});
+$('addSite').addEventListener('click', () => {
+  $('bizName').value = ''; $('bizUrl').value = ''; $('setupMsg').textContent = '';
+  $('setupTitle').textContent = 'Add a website'; show('paneSetup');
+});
+function renderSites() {
+  $('siteSel').style.display = BIZLIST.length > 1 ? 'inline-block' : 'none';
+  $('siteSel').innerHTML = BIZLIST.map(b => `<option value="${b.id}" ${BIZ && b.id===BIZ.id?'selected':''}>${esc(b.name)}</option>`).join('');
+}
 
 // ---------------------------------------------------------------- auth ----
 $('authForm').addEventListener('submit', async (e) => {
@@ -209,10 +325,12 @@ $('setupForm').addEventListener('submit', async (e) => {
               website_url: $('bizUrl').value.trim() })
     .select().single();
   if (error) {
-    $('setupMsg').textContent = error.message;
+    $('setupMsg').textContent = /site_limit/.test(error.message)
+      ? 'Your plan allows ' + ((error.message.match(/allows (.*)$/) || [,'1 website'])[1]) + '. Scale covers up to 5 websites.'
+      : error.message;
     btn.disabled = false; btn.textContent = 'Run my first scan'; return;
   }
-  BIZ = data;
+  BIZ = data; BIZLIST.push(data); store('scale_biz', data.id);
   store('scale_site', null);
   await runScan(true);
 });
@@ -231,6 +349,12 @@ async function runScan(firstTime) {
       body: JSON.stringify({ business_id: BIZ.id, trigger: firstTime ? 'onboarding' : 'manual' })
     });
     const out = await r.json();
+    if (r.status === 402 && out.code === 'upgrade') {
+      notice(esc(out.error), true);
+      await loadDash();
+      $('upgradeCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
     if (!r.ok) throw new Error(out.error || 'Scan failed');
     await loadDash();
   } catch (err) {
@@ -256,6 +380,7 @@ async function loadDash() {
 
   $('dashName').textContent = BIZ.name;
   $('dashUrl').textContent = BIZ.website_url;
+  renderSites();
 
   const latest = scans && scans[0];
   if (!latest) { show('paneDash'); return; }
@@ -298,7 +423,26 @@ async function loadDash() {
         <div class="imp">${'●'.repeat(a.impact||1)}</div></div>`).join('')
     : '<div class="empty">Nothing outstanding. Every check passed.</div>';
 
+  // Free shows the five heaviest fixes. Say how many more exist rather than
+  // pretending the list is complete.
+  const total = (latest.findings || []).length, shown = (acts || []).length;
+  $('dMore').innerHTML = ME && ME.plan === 'free' && total > shown
+    ? `<div class="more"><span><b>${total - shown} more fix${total - shown === 1 ? '' : 'es'}</b> found on this scan. The full ranked list is on Growth and Scale.</span>
+       <button class="btn btn-pri" onclick="document.getElementById('upgradeCard').scrollIntoView({behavior:'smooth'})">See plans</button></div>`
+    : '';
+
   show('paneDash');
+  resumeCheckout();
+}
+
+async function resumeCheckout() {
+  const want = recall('scale_plan');
+  if (!want || !ME || ME.plan !== 'free' || !ME.billing_ready) return;
+  store('scale_plan', null);
+  notice('<span class="spin"></span>Opening secure checkout for ' + esc(ME.plans[want].name) + '…');
+  const r = await api('/api/billing/checkout', { method: 'POST', body: JSON.stringify({ plan: want }) });
+  if (r.ok && r.out.url) { location.href = r.out.url; return; }
+  notice(esc(r.out.error || 'Checkout could not start. Choose a plan below to try again.'), true);
 }
 
 // Level over time -> a line. Only drawn with two or more points, because a
@@ -365,7 +509,21 @@ $('dActions').addEventListener('change', async (e) => {
   $('signout').style.display = 'block';
 
   const { data: list } = await sb.from('businesses')
-    .select('*').order('created_at', { ascending: true }).limit(1);
+    .select('*').order('created_at', { ascending: true });
+  BIZLIST = list || [];
+  const billing = new URLSearchParams(location.search).get('billing');
+  if (billing) history.replaceState(null, '', location.pathname);
+  await loadMe();
+  if (billing === 'cancel') notice('Checkout was cancelled. Nothing was charged.', true);
+  if (billing === 'success') {
+    notice('<span class="spin"></span>Payment received. Switching on your plan…');
+    for (let i = 0; i < 10 && ME && ME.plan === 'free'; i++) {
+      await new Promise(r => setTimeout(r, 1500)); await loadMe();
+    }
+    notice(ME && ME.plan !== 'free'
+      ? `You're on <b>${esc(ME.limits.name)}</b>. Thank you. Rescan any time, and your automatic monthly scan is on.`
+      : 'Payment received. Your plan is still updating; refresh in a minute. If it doesn\'t change, email siamakk2@gmail.com.');
+  }
   if (!list || !list.length) {
     // Prefill from the site they scanned on the landing page, so the first
     // thing a new account asks is nothing they have already told us.
@@ -378,7 +536,9 @@ $('dActions').addEventListener('change', async (e) => {
     }
     show('paneSetup'); return;
   }
-  BIZ = list[0];
+  const want = recall('scale_biz');
+  BIZ = list.find(b => b.id === want) || list[0];
+  await loadMe();   // again, now that the site count is known (add-site button)
   await loadDash();
 })();
 </script>

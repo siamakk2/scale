@@ -21,14 +21,14 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/app.css">
-<link rel="stylesheet" href="/assets/landing.css?v=4">
+<link rel="stylesheet" href="/assets/landing.css?v=5">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@graph":[
  {"@type":"SoftwareApplication","@id":"https://scale.siamakconsulting.com/#app",
   "name":"S.C.A.L.E.","url":"https://scale.siamakconsulting.com/",
   "applicationCategory":"BusinessApplication","operatingSystem":"Web",
   "description":"An AI visibility scanner that reads a business website the way generative AI systems do, scores it on five dimensions (visibility, clarity, structure, authority, momentum) and produces a ranked fix list.",
-  "offers":{"@type":"Offer","name":"Free scan","price":"0","priceCurrency":"USD"},
+  "offers":[{"@type":"Offer","name":"Free","price":"0","priceCurrency":"USD"},{"@type":"Offer","name":"Growth","price":"29","priceCurrency":"USD","priceSpecification":{"@type":"UnitPriceSpecification","price":"29","priceCurrency":"USD","unitCode":"MON","referenceQuantity":{"@type":"QuantitativeValue","value":1,"unitCode":"MON"}}},{"@type":"Offer","name":"Scale","price":"99","priceCurrency":"USD","priceSpecification":{"@type":"UnitPriceSpecification","price":"99","priceCurrency":"USD","unitCode":"MON","referenceQuantity":{"@type":"QuantitativeValue","value":1,"unitCode":"MON"}}}],
   "creator":{"@id":"https://siamakconsulting.com/#person"},
   "publisher":{"@id":"https://siamakconsulting.com/#business"}},
  {"@type":"Person","@id":"https://siamakconsulting.com/#person","name":"Siamak Kalhor",
@@ -68,6 +68,7 @@
     <nav class="lp-nav">
       <a href="#how">How it works</a>
       <a href="#stages">The five stages</a>
+      <a href="#pricing">Pricing</a>
       <a href="#faq">Questions</a>
       <a class="btn btn-ghost" href="/app/">Sign in</a>
     </nav>
@@ -356,6 +357,29 @@
   </section>
 
   <!-- ================================================================= faq -->
+  <!-- ============================================================== pricing -->
+  <section class="lp-sec" id="pricing">
+    <div class="kicker">Pricing</div>
+    <h2>Start free. <span class="g">Pay when the line is worth tracking.</span></h2>
+    <p class="lede">The scan is free and needs no account. Plans are for people who want to watch
+      the score move month after month, and fix everything on the list, not just the top five.</p>
+    <div class="price3">
+      <div class="pc glass"><h3>Free</h3><div class="amt">$0</div>
+        <ul><li>1 website</li><li>One scan every 30 days</li><li>Your top 5 fixes</li><li>Score history</li></ul>
+        <a class="btn btn-ghost" href="/app/">Create a free account</a></div>
+      <div class="pc glass best"><span class="tag">Most popular</span><h3>Growth</h3><div class="amt">$29<small>/month</small></div>
+        <ul><li>1 website</li><li>Rescan any time</li><li>The full ranked fix list</li><li>Automatic monthly scan</li></ul>
+        <a class="btn btn-pri" href="/app/?plan=growth">Choose Growth</a></div>
+      <div class="pc glass"><h3>Scale</h3><div class="amt">$99<small>/month</small></div>
+        <ul><li>Up to 5 websites</li><li>Rescan any time</li><li>The full ranked fix list</li><li>Automatic monthly scans</li></ul>
+        <a class="btn btn-ghost" href="/app/?plan=scale">Choose Scale</a></div>
+    </div>
+    <p class="pfine">Prices in USD. Paid plans are billed monthly through Stripe and renew automatically until you
+      cancel, which you can do any time from your dashboard. Want a person, not a plan?
+      <a href="https://siamakconsulting.com/analyze-your-brand">The AI Authority Audit</a> is a fixed $1,500.</p>
+  </section>
+
+  <!-- ============================================================= questions -->
   <section class="lp-sec" id="faq">
     <div class="kicker">Questions</div>
     <h2>Before you scan.</h2>
@@ -399,7 +423,7 @@
 <footer class="lp-foot">
   <div class="in">
     <span>&copy; 2026 Siamak Kalhor Consulting &middot; Los Angeles</span>
-    <span><a href="/privacy">Privacy</a> &middot; <a href="/terms">Terms</a> &middot;
+    <span><a href="#pricing">Pricing</a> &middot; <a href="/privacy">Privacy</a> &middot; <a href="/terms">Terms</a> &middot;
       <a href="https://siamakconsulting.com/">siamakconsulting.com</a> &middot;
       <a href="/app/">Sign in</a></span>
   </div>

@@ -10,7 +10,7 @@ something new, change the facts here first, then rebuild:
 import os, html
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-UPDATED = "October 6, 2026"
+UPDATED = "October 6, 2026"  # paid plans added the same day
 
 def page(slug, title, desc, h1, intro, sections):
     toc = "".join(f'<li><a href="#{sid}">{html.escape(h)}</a></li>' for sid, h, _ in sections)
@@ -30,7 +30,7 @@ def page(slug, title, desc, h1, intro, sections):
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/app.css">
-<link rel="stylesheet" href="/assets/landing.css?v=4">
+<link rel="stylesheet" href="/assets/landing.css?v=5">
 <style>
 .legal{{max-width:760px;margin:0 auto;padding:56px 24px 40px}}
 .legal .kicker{{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin-bottom:14px}}
@@ -112,7 +112,11 @@ privacy = [
  "<tr><td>Your action list, what you mark done or dismissed, and your stage progress</td><td>So your plan carries over between visits</td></tr>"
  "<tr><td>Positioning statements you write in the app, if any</td><td>So you can refine them over time</td></tr>"
  "</tbody></table></div>"
- "<p>We don't ask for a password, your phone number, your address or any payment details.</p>"),
+ "<p>We don't ask for a password, your phone number or your address.</p>"
+ "<h3>If you buy a plan</h3><p>Payment is handled entirely by Stripe. We receive and store your Stripe "
+ "customer and subscription IDs, your plan, its status and renewal date. <strong>We never see or store your card "
+ "number.</strong> Stripe processes your payment details under "
+ "<a href=\"https://stripe.com/privacy\">its own privacy policy</a>.</p>"),
 ("signin", "Sign-in, cookies and tracking",
  "<p>Sign-in is passwordless: we email you a single-use link. When you use it, a session token is saved in your "
  "browser's local storage so you stay signed in. That's the only thing the app stores on your device besides the "
@@ -137,9 +141,9 @@ privacy = [
  "<tr><td>Supabase</td><td>Database and sign-in</td><td>United States (Ohio)</td></tr>"
  "<tr><td>Vercel</td><td>Hosting the app</td><td>United States and global edge network</td></tr>"
  "<tr><td>Resend</td><td>Sending sign-in emails</td><td>United States</td></tr>"
+ "<tr><td>Stripe</td><td>Payments and subscriptions, for paid plans</td><td>United States</td></tr>"
  "</tbody></table></div>"
- "<p>The app is free today. If paid plans are introduced, payments will be processed by Stripe and we'll update this "
- "policy first. We would never see or store your full card number.</p>"),
+ ),
 ("retention", "How long we keep it",
  "<ul><li>Account data, including scan history, is kept while your account is open. The history <em>is</em> the product, "
  "so we don't delete it on our own.</li>"
@@ -206,10 +210,25 @@ terms = [
  "<p>The S.C.A.L.E. name, the S.C.A.L.E. Framework, the checks and scoring method, and the software belong to Siamak "
  "Kalhor Consulting. You may share your own results freely; please don't present the Service or its methodology as "
  "your own.</p>"),
-("plans", "Price",
- "<p>The Service is free today. If we introduce paid plans, the price and terms will be shown clearly before you pay, "
- "and nothing will be charged without your explicit agreement. Free features in use before then won't be switched to "
- "paid without notice.</p>"),
+("plans", "Plans, billing and cancellation",
+ "<p>S.C.A.L.E. has a free plan and two paid plans, <strong>Growth ($29 a month)</strong> and <strong>Scale ($99 a "
+ "month)</strong>, as described on the <a href=\"/#pricing\">pricing section</a>. Prices are in US dollars and "
+ "exclude any taxes that apply.</p>"
+ "<ul><li><strong>Automatic renewal.</strong> Paid plans are billed monthly in advance and <strong>renew automatically "
+ "each month until you cancel</strong>. Your card is charged on the same day each month through Stripe.</li>"
+ "<li><strong>Cancel any time, online.</strong> Open your dashboard and choose <em>Manage billing</em>, then cancel. "
+ "Cancellation stops the next renewal; you keep your paid plan until the end of the period you already paid for, "
+ "then your account moves to Free. Your scan history is kept.</li>"
+ "<li><strong>Changing plans.</strong> You can switch between Growth and Scale in <em>Manage billing</em>; Stripe "
+ "adjusts the charge for the rest of the month.</li>"
+ "<li><strong>Refunds.</strong> Monthly charges are not refunded for partly used months, except where the law "
+ "requires it. If something went wrong, such as a duplicate charge, email us and we'll put it right.</li>"
+ "<li><strong>Failed payments.</strong> If a renewal fails, Stripe retries it and your plan stays on for a short grace "
+ "period. If payment still fails, the account moves to Free.</li>"
+ "<li><strong>Price changes.</strong> We'll email you at least 30 days before any price change takes effect for your "
+ "plan, so you can cancel first if you prefer.</li></ul>"
+ "<p>Consulting services bought from siamakconsulting.com, such as a strategy session or the AI Authority Audit, "
+ "are separate purchases covered by the terms on that site.</p>"),
 ("ending", "Ending your use",
  "<p>You can stop using the Service at any time and ask us to delete your account (see the Privacy Policy). We may "
  "suspend or end access for misuse or if we discontinue the Service; if we discontinue it, we'll give account holders "
