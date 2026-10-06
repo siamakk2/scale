@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S.C.A.L.E. — See how AI sees your business</title>
+<meta name="description" content="Scan, Clarify, Amplify, Leverage, Evaluate. The system behind forty years of brand building, now measuring your business every month.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/app.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <div class="logo">S<b>.</b>C<b>.</b>A<b>.</b>L<b>.</b>E<b>.</b></div>
+    <div style="font-size:12.5px;color:var(--dim)">by Siamak Kalhor</div>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <div class="eyebrow">Stage one &mdash; Scan</div>
+      <h1>See your business <span class="g">the way AI sees it.</span></h1>
+      <p class="sub">Forty years of brand strategy, reduced to a system that measures
+        five things every month and tells you which one to fix first.</p>
+
+      <form class="scanbar" id="scanForm" autocomplete="off">
+        <label for="site" style="position:absolute;left:-9999px">Your website</label>
+        <input id="site" name="site" type="text" inputmode="url"
+               placeholder="yourbusiness.com" required>
+        <button type="submit" class="btn btn-pri" id="go">Run the scan</button>
+      </form>
+      <p class="note">Free, about ten seconds, no account.</p>
+      <div class="err" id="err"></div>
+    </div>
+  </section>
+
+  <section class="results" id="results">
+    <div class="wrap">
+
+      <div class="card">
+        <div class="headline">
+          <div class="bigscore" id="overall">&mdash;</div>
+          <div class="who">
+            <div class="h" id="host">&nbsp;</div>
+            <div class="s" id="verdict">&nbsp;</div>
+          </div>
+        </div>
+        <div class="stages" id="stages"></div>
+      </div>
+
+      <div class="card">
+        <div class="sec-h">The five dimensions</div>
+        <p class="lead">One per stage of S.C.A.L.E. Each is a count of named checks,
+          not an opinion &mdash; so next month&rsquo;s number means something.</p>
+        <div class="dims" id="dims"></div>
+        <div class="locked" id="momentumNote" style="margin-top:16px">
+          <b>Momentum needs a second scan.</b> There is nothing to measure against yet,
+          so it is left empty rather than filled with a number that would mean nothing.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="sec-h">Fix these first</div>
+        <p class="lead">Ranked by how much each one moves the score, heaviest first.</p>
+        <div class="actions" id="actions"></div>
+      </div>
+
+    </div>
+  </section>
+</main>
+
+<script>
+const STAGES = [
+  ['S','Scan','visibility'], ['C','Clarify','clarity'], ['A','Amplify','structure'],
+  ['L','Leverage','authority'], ['E','Evaluate','momentum']
+];
+const LABEL = { visibility:'Visibility', clarity:'Clarity', structure:'Structure',
+                authority:'Authority', momentum:'Momentum' };
+
+function colorFor(v){
+  if (v === null || v === undefined) return 'var(--line-bright)';
+  if (v >= 80) return 'var(--good)';
+  if (v >= 55) return 'var(--mid)';
+  return 'var(--bad)';
+}
+function verdictFor(v){
+  if (v >= 85) return 'Strong. AI systems can read you clearly.';
+  if (v >= 70) return 'Solid foundation, with real gaps worth closing.';
+  if (v >= 50) return 'Readable, but you are leaving authority on the table.';
+  return 'AI systems are struggling to understand this business.';
+}
+
+const form = document.getElementById('scanForm');
+const go   = document.getElementById('go');
+const err  = document.getElementById('err');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const site = document.getElementById('site').value.trim();
+  if (!site) return;
+
+  err.classList.remove('on');
+  go.disabled = true;
+  go.innerHTML = '<span class="spin"></span>Scanning';
+
+  try {
+    const r = await fetch('/api/demo-scan', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ url: site })
+    });
+    const data = await r.json();
+    if (!r.ok || data.error) throw new Error(data.error || 'Scan failed');
+    render(data);
+  } catch (e2) {
+    err.textContent = e2.message || 'Something went wrong. Try again.';
+    err.classList.add('on');
+  } finally {
+    go.disabled = false;
+    go.textContent = 'Run the scan';
+  }
+});
+
+function render(d){
+  document.getElementById('overall').textContent = d.overall ?? '—';
+  document.getElementById('host').textContent = d.host || '';
+  document.getElementById('verdict').textContent = verdictFor(d.overall ?? 0);
+
+  document.getElementById('stages').innerHTML = STAGES.map(([l,w,dim]) => {
+    const v = d.scores[dim];
+    return `<div class="st ${typeof v === 'number' ? 'done' : ''}">
+      <div class="l">${l}</div><div class="w">${w}</div></div>`;
+  }).join('');
+
+  document.getElementById('dims').innerHTML = STAGES.map(([l,w,dim]) => {
+    const v = d.scores[dim];
+    const has = typeof v === 'number';
+    return `<div class="dim">
+      <div><div class="n">${LABEL[dim]}</div><div class="stage">${w}</div></div>
+      <div class="track"><div class="fill" style="width:${has ? v : 0}%;background:${colorFor(v)}"></div></div>
+      <div class="v ${has ? '' : 'null'}">${has ? v : '—'}</div>
+    </div>`;
+  }).join('');
+
+  const acts = d.findings || [];
+  document.getElementById('actions').innerHTML = acts.length
+    ? acts.slice(0,10).map(f => `<div class="act">
+        <div class="sev ${f.severity}"></div>
+        <div><div class="t">${esc(f.title)}</div><div class="d">${esc(f.detail)}</div></div>
+        <div class="imp">+${f.weight}</div></div>`).join('')
+    : '<div class="empty">Nothing failing. Every check passed on this page.</div>';
+
+  document.getElementById('results').classList.add('on');
+  document.getElementById('results').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function esc(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g,
+    c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+</script>
+</body>
+</html>
