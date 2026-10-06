@@ -136,7 +136,20 @@
 <script src="/assets/vendor/supabase.js"></script>
 <script src="/assets/config.js"></script>
 <script>
-const sb = supabase.createClient(window.SCALE_CONFIG.supabaseUrl, window.SCALE_CONFIG.supabaseKey);
+/* flowType 'implicit' on purpose. The PKCE flow keeps a secret in the browser
+   that requested the link, so the link only works if it is opened in that same
+   browser. On a phone that almost never happens: you ask on the site, tap the
+   link in the Gmail app, and it opens somewhere else. Implicit carries the
+   session in the link itself, which is what makes "tap the email" just work. */
+const sb = supabase.createClient(window.SCALE_CONFIG.supabaseUrl, window.SCALE_CONFIG.supabaseKey,
+  { auth: { flowType: 'implicit', detectSessionInUrl: true, persistSession: true, autoRefreshToken: true } });
+
+// Carry the website across the email round-trip, which drops the query string.
+function store(k, v){ try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch(e) {} }
+function recall(k){ try { return localStorage.getItem(k); } catch(e) { return null; } }
+(function(){
+  try { const s = new URLSearchParams(location.search).get('site'); if (s) store('scale_site', s.trim().slice(0,200)); } catch(e) {}
+})();
 
 const STAGES = [['S','Scan','visibility'],['C','Clarify','clarity'],['A','Amplify','structure'],
                 ['L','Leverage','authority'],['E','Evaluate','momentum']];
@@ -161,12 +174,14 @@ let BIZ = null;
 $('authForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = $('authGo'); btn.disabled = true; btn.textContent = 'Sending…';
+  const email = $('email').value.trim();
   const { error } = await sb.auth.signInWithOtp({
-    email: $('email').value.trim(),
+    email,
     options: { emailRedirectTo: window.location.origin + '/app/' }
   });
   $('authMsg').className = 'msg' + (error ? '' : ' good');
-  $('authMsg').textContent = error ? error.message : 'Check your email for the link.';
+  $('authMsg').textContent = error ? error.message
+    : 'Sent to ' + email + '. Open the newest email from Supabase and tap the link. It works on any device.';
   btn.disabled = false; btn.textContent = 'Email me a link';
 });
 
@@ -180,6 +195,7 @@ $('setupForm').addEventListener('submit', async (e) => {
   const btn = $('setupGo'); btn.disabled = true;
   btn.innerHTML = '<span class="spin"></span>Setting up';
   const { data: { user } } = await sb.auth.getUser();
+  if (!user) { show('paneAuth'); return; }
   const { data, error } = await sb.from('businesses')
     .insert({ owner_id: user.id, name: $('bizName').value.trim(),
               website_url: $('bizUrl').value.trim() })
@@ -189,6 +205,7 @@ $('setupForm').addEventListener('submit', async (e) => {
     btn.disabled = false; btn.textContent = 'Run my first scan'; return;
   }
   BIZ = data;
+  store('scale_site', null);
   await runScan(true);
 });
 
@@ -315,13 +332,44 @@ $('dActions').addEventListener('change', async (e) => {
 
 // ----------------------------------------------------------------- boot ---
 (async () => {
+  // A link that failed (expired, already used, wrong redirect) comes back with
+  // the reason in the URL. Say so, instead of quietly showing the sign-in form
+  // again and leaving people to guess why it "didn't work".
+  const raw = (location.hash || '').replace(/^#/, '') + '&' + (location.search || '').replace(/^\?/, '');
+  const urlErr = new URLSearchParams(raw).get('error_description');
+
   const { data: { session } } = await sb.auth.getSession();
-  if (!session) { show('paneAuth'); return; }
+
+  // Tokens in the address bar are noise once the session is stored.
+  if (location.hash || /[?&](code|error)/.test(location.search))
+    history.replaceState(null, '', location.pathname);
+
+  if (!session) {
+    show('paneAuth');
+    if (urlErr) {
+      $('authMsg').className = 'msg';
+      $('authMsg').textContent = /expired|invalid/i.test(urlErr)
+        ? 'That sign-in link has expired or was already used. Enter your email for a fresh one.'
+        : 'Sign-in did not complete: ' + urlErr + '. Enter your email for a fresh link.';
+    }
+    return;
+  }
   $('signout').style.display = 'block';
 
   const { data: list } = await sb.from('businesses')
     .select('*').order('created_at', { ascending: true }).limit(1);
-  if (!list || !list.length) { show('paneSetup'); return; }
+  if (!list || !list.length) {
+    // Prefill from the site they scanned on the landing page, so the first
+    // thing a new account asks is nothing they have already told us.
+    const site = recall('scale_site');
+    if (site) {
+      $('bizUrl').value = site;
+      const host = site.replace(/^https?:\/\//, '').replace(/^www\./, '').split(/[/?#]/)[0];
+      const base = host.split('.')[0] || '';
+      if (base && !$('bizName').value) $('bizName').value = base.charAt(0).toUpperCase() + base.slice(1);
+    }
+    show('paneSetup'); return;
+  }
   BIZ = list[0];
   await loadDash();
 })();

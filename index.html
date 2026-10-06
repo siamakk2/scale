@@ -15,6 +15,7 @@
 <meta property="og:site_name" content="S.C.A.L.E. by Siamak Kalhor">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#000000">
+<meta name="msvalidate.01" content="3C1F0FCF13CF5737036A2755C887B3A2">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -46,6 +47,13 @@
 </head>
 <body>
 
+<script>
+(function(){
+  var h = location.hash || '', q = location.search || '';
+  if (/access_token=|error_description=|type=magiclink/.test(h) || /[?&]code=/.test(q))
+    location.replace('/app/' + q + h);
+})();
+</script>
 <div class="space" aria-hidden="true">
   <canvas id="stars"></canvas>
   <div class="nebula n1"></div><div class="nebula n2"></div><div class="nebula n3"></div>
@@ -221,7 +229,7 @@
         <div class="dims" id="dims"></div>
         <div class="locked" style="margin-top:16px">
           <b>Momentum needs a second scan.</b> There is nothing to measure against yet.
-          <a href="/app/" style="color:var(--amber)">Create a free account</a> and next month&rsquo;s
+          <a href="/app/" id="saveLink" style="color:var(--amber)">Create a free account</a> and next month&rsquo;s
           scan will show you which way you are moving.
         </div>
       </div>
@@ -513,6 +521,8 @@ function render(d){
         <div><div class="t">${esc(x.title)}</div><div class="d">${esc(x.detail)}</div></div>
         <div class="imp">+${x.weight}</div></div>`).join('')
     : '<div class="empty">Nothing failing. Every check passed on this page.</div>';
+  const typed = (document.querySelector('.js-scan input').value || d.host || '').trim();
+  document.getElementById('saveLink').href = '/app/?site=' + encodeURIComponent(typed);
   const res = document.getElementById('results');
   res.classList.add('on');
   res.scrollIntoView({ behavior:'smooth', block:'start' });
