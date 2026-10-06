@@ -12,14 +12,18 @@ html,body{overflow-x:clip}
 
 /* ------------------------------------------------------------ space ----- */
 .space{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
-.space canvas{position:absolute;inset:0;width:100%;height:100%}
-.nebula{position:absolute;border-radius:50%;filter:blur(90px);opacity:.42}
+.space canvas{position:absolute;top:0;left:0;width:100%;height:100%;height:100lvh} /* lvh: tallest viewport, so the toolbar never resizes it */
+/* No filter:blur here. The radial gradients already fade to transparent, and a
+   90px blur on three animated 600px layers was the heaviest thing on the page:
+   iOS Safari ran out of tile memory while scrolling and briefly painted blank
+   bands over the hero. */
+.nebula{position:absolute;border-radius:50%;opacity:.42}
 .nebula.n1{width:620px;height:620px;left:-180px;top:-160px;
-  background:radial-gradient(circle,rgba(160,107,255,.55),transparent 70%)}
+  background:radial-gradient(circle,rgba(160,107,255,.42),rgba(160,107,255,.12) 40%,transparent 70%)}
 .nebula.n2{width:560px;height:560px;right:-160px;top:120px;
-  background:radial-gradient(circle,rgba(255,180,84,.45),transparent 70%)}
+  background:radial-gradient(circle,rgba(255,180,84,.34),rgba(255,180,84,.1) 40%,transparent 70%)}
 .nebula.n3{width:700px;height:700px;left:30%;top:900px;
-  background:radial-gradient(circle,rgba(45,212,255,.28),transparent 70%)}
+  background:radial-gradient(circle,rgba(45,212,255,.22),rgba(45,212,255,.07) 40%,transparent 70%)}
 @media(prefers-reduced-motion:no-preference){
   .nebula.n1{animation:drift1 38s ease-in-out infinite alternate}
   .nebula.n2{animation:drift2 44s ease-in-out infinite alternate}
@@ -251,3 +255,12 @@ footer.lp-foot{border-top:1px solid var(--line);padding:30px 24px 40px;margin-to
 
 /* results sit between hero and sections */
 .results .wrap{max-width:1000px}
+
+/* Phones: keep the look, drop the per-frame cost. The glows hold still, the
+   comets lose their drop-shadow filter, and the diagram's pulses lose the SVG
+   blur filter, which forced a full re-rasterise of the diagram every frame. */
+@media (max-width:900px), (hover:none){
+  .nebula{animation:none!important}
+  .comet,.comet.c2{filter:none}
+  .viz .pulse{filter:none}
+}
