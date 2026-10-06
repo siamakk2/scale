@@ -256,11 +256,31 @@ footer.lp-foot{border-top:1px solid var(--line);padding:30px 24px 40px;margin-to
 /* results sit between hero and sections */
 .results .wrap{max-width:1000px}
 
-/* Phones: keep the look, drop the per-frame cost. The glows hold still, the
-   comets lose their drop-shadow filter, and the diagram's pulses lose the SVG
-   blur filter, which forced a full re-rasterise of the diagram every frame. */
-@media (max-width:900px), (hover:none){
+/* Phones and tablets: no fixed, animated layer under the page at all.
+   A position:fixed background that keeps animating (canvas, drifting glows,
+   comets) makes iOS Safari promote everything overlapping it -- the whole
+   page -- into one huge composited layer, which it paints in tiles lazily
+   while scrolling. That is the blank "sky only" screen. Here the sky is
+   static and scrolls with the page: stars are a tiled CSS background on body,
+   the glows sit behind the first screen only, and nothing animates under the
+   content. */
+@media (hover:none), (max-width:900px){
+  .space{position:absolute;inset:auto;top:0;left:0;right:0;height:100vh;height:100lvh}
+  .space canvas,.comet{display:none}
   .nebula{animation:none!important}
-  .comet,.comet.c2{filter:none}
   .viz .pulse{filter:none}
+  body{
+    background-color:var(--void);
+    background-image:
+      radial-gradient(1px 1px at 23px 41px,rgba(235,242,255,.55),transparent 60%),
+      radial-gradient(1px 1px at 131px 87px,rgba(235,242,255,.35),transparent 60%),
+      radial-gradient(1.4px 1.4px at 211px 19px,rgba(255,200,140,.55),transparent 60%),
+      radial-gradient(1px 1px at 67px 173px,rgba(235,242,255,.4),transparent 60%),
+      radial-gradient(1.2px 1.2px at 263px 141px,rgba(150,225,255,.5),transparent 60%),
+      radial-gradient(1px 1px at 173px 233px,rgba(235,242,255,.3),transparent 60%),
+      radial-gradient(1.3px 1.3px at 31px 271px,rgba(235,242,255,.5),transparent 60%),
+      radial-gradient(1px 1px at 241px 287px,rgba(235,242,255,.35),transparent 60%);
+    background-size:300px 300px;
+  }
+  header.lp-top{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(5,7,12,.94)}
 }
