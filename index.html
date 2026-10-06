@@ -480,6 +480,20 @@ document.querySelectorAll('.js-scan').forEach(form => {
   });
 });
 
+/* Arriving from a link with ?site=example.com runs the scan straight away.
+   This is what lets siamakconsulting.com's old audit links and its homepage
+   scan bar hand a visitor over mid-intent, instead of dropping them on an
+   empty form and asking them to type their address a second time. */
+(function(){
+  let seed;
+  try { seed = new URLSearchParams(location.search).get('site'); } catch(e) {}
+  if (!seed) return;
+  seed = seed.trim().slice(0, 200); if (!seed) return;
+  const f = document.querySelector('.js-scan');
+  f.querySelector('input').value = seed;
+  setTimeout(() => f.requestSubmit(), 150);
+})();
+
 function render(d){
   document.getElementById('overall').textContent = d.overall ?? '—';
   document.getElementById('host').textContent = d.host || '';
