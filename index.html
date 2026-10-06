@@ -3,44 +3,207 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>S.C.A.L.E. — See how AI sees your business</title>
-<meta name="description" content="Scan, Clarify, Amplify, Leverage, Evaluate. The system behind forty years of brand building, now measuring your business every month.">
+<title>S.C.A.L.E. — See your business the way AI sees it</title>
+<meta name="description" content="Free AI visibility scan. S.C.A.L.E. reads your website the way ChatGPT, Gemini and Claude do, scores it on five dimensions, and tells you what to fix first. By Siamak Kalhor.">
+<link rel="canonical" href="https://scale.siamakconsulting.com/">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://scale.siamakconsulting.com/">
+<meta property="og:title" content="S.C.A.L.E. — See your business the way AI sees it">
+<meta property="og:description" content="A free scan that reads your website the way AI systems do and tells you what to fix first.">
+<meta property="og:image" content="https://scale.siamakconsulting.com/assets/og.png">
+<meta property="og:site_name" content="S.C.A.L.E. by Siamak Kalhor">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/app.css">
+<link rel="stylesheet" href="/assets/landing.css">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+ {"@type":"SoftwareApplication","@id":"https://scale.siamakconsulting.com/#app",
+  "name":"S.C.A.L.E.","url":"https://scale.siamakconsulting.com/",
+  "applicationCategory":"BusinessApplication","operatingSystem":"Web",
+  "description":"An AI visibility scanner that reads a business website the way generative AI systems do, scores it on five dimensions (visibility, clarity, structure, authority, momentum) and produces a ranked fix list.",
+  "offers":{"@type":"Offer","name":"Free scan","price":"0","priceCurrency":"USD"},
+  "creator":{"@id":"https://siamakconsulting.com/#person"},
+  "publisher":{"@id":"https://siamakconsulting.com/#business"}},
+ {"@type":"Person","@id":"https://siamakconsulting.com/#person","name":"Siamak Kalhor",
+  "jobTitle":"AI Consultant","url":"https://siamakconsulting.com/",
+  "sameAs":["https://www.linkedin.com/in/siamakkalhor/"]},
+ {"@type":"ProfessionalService","@id":"https://siamakconsulting.com/#business",
+  "name":"Siamak Kalhor Consulting","url":"https://siamakconsulting.com/"},
+ {"@type":"FAQPage","mainEntity":[
+  {"@type":"Question","name":"What does S.C.A.L.E. actually check?","acceptedAnswer":{"@type":"Answer","text":"Twenty-two named checks across four measurable dimensions: whether AI crawlers can read your page, whether your role and positioning are stated plainly, whether your structured data is present and valid, and whether your profiles and citations connect back to you. The fifth dimension, momentum, is the change between scans."}},
+  {"@type":"Question","name":"Is the scan really free?","acceptedAnswer":{"@type":"Answer","text":"Yes. The scan needs no account. A free account saves your results, which is what lets the second scan measure momentum."}},
+  {"@type":"Question","name":"How is this different from an SEO audit?","acceptedAnswer":{"@type":"Answer","text":"An SEO audit measures how a page ranks in a list of links. S.C.A.L.E. measures whether an AI system can understand a business well enough to recommend it, which depends on different signals: stated identity, structured data, and corroboration from other sources."}},
+  {"@type":"Question","name":"How often should I scan?","acceptedAnswer":{"@type":"Answer","text":"Monthly. Scores move when you change your site or your profiles, and a monthly rhythm shows a real trend without chasing noise."}},
+  {"@type":"Question","name":"Do you store my website?","acceptedAnswer":{"@type":"Answer","text":"The free scan reads the public page you enter and does not keep it. With an account, results are stored privately and are visible only to you."}}]}
+]}
+</script>
 </head>
 <body>
 
-<header class="top">
-  <div class="top-in">
-    <div class="logo">S<b>.</b>C<b>.</b>A<b>.</b>L<b>.</b>E<b>.</b></div>
-    <div style="font-size:12.5px;color:var(--dim)">by Siamak Kalhor</div>
+<div class="space" aria-hidden="true">
+  <canvas id="stars"></canvas>
+  <div class="nebula n1"></div><div class="nebula n2"></div><div class="nebula n3"></div>
+  <!-- the flash: inside the fixed, clipped layer so it can cross the whole
+       screen without widening the page -->
+  <div class="comet"></div><div class="comet c2"></div>
+</div>
+
+<header class="lp-top">
+  <div class="in">
+    <a class="logo" href="/" aria-label="S.C.A.L.E. home">S<b>.</b>C<b>.</b>A<b>.</b>L<b>.</b>E<b>.</b></a>
+    <nav class="lp-nav">
+      <a href="#how">How it works</a>
+      <a href="#stages">The five stages</a>
+      <a href="#faq">Questions</a>
+      <a class="btn btn-ghost" href="/app/">Sign in</a>
+    </nav>
   </div>
 </header>
 
 <main>
-  <section class="hero">
-    <div class="wrap">
-      <div class="eyebrow">Stage one &mdash; Scan</div>
+  <!-- ================================================================ hero -->
+  <section class="lp-hero">
+    <div class="copy">
+      <div class="eyebrow">AI visibility, measured every month</div>
       <h1>See your business <span class="g">the way AI sees it.</span></h1>
-      <p class="sub">Forty years of brand strategy, reduced to a system that measures
-        five things every month and tells you which one to fix first.</p>
+      <p class="sub">ChatGPT, Gemini and Claude now decide who gets recommended.
+        S.C.A.L.E. reads your website the way they do, scores it on five things
+        that matter, and tells you exactly what to fix first.</p>
 
-      <form class="scanbar" id="scanForm" autocomplete="off">
+      <form class="scanbar js-scan" autocomplete="off">
         <label for="site" style="position:absolute;left:-9999px">Your website</label>
-        <input id="site" name="site" type="text" inputmode="url"
-               placeholder="yourbusiness.com" required>
-        <button type="submit" class="btn btn-pri" id="go">Run the scan</button>
+        <input id="site" name="site" type="text" inputmode="url" placeholder="yourbusiness.com" required>
+        <button type="submit" class="btn btn-pri">Run the free scan</button>
       </form>
-      <p class="note">Free, about ten seconds, no account.</p>
+      <p class="note">Free &middot; about ten seconds &middot; no account</p>
       <div class="err" id="err"></div>
+
+      <div class="lp-cred">
+        <img src="/assets/silhouette.svg" alt="" width="34" height="34">
+        <span>Built on <b>40 years of brand strategy</b> by Siamak Kalhor</span>
+      </div>
     </div>
+
+    <!-- The scan, drawn: a page goes in, the robot reads it, five scores come out. -->
+    <svg class="viz" id="viz" viewBox="0 58 560 316" role="img"
+         aria-label="Illustration: a website is read by the S.C.A.L.E. robot and turned into five scores">
+      <defs>
+        <linearGradient id="scanG" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ffb454" stop-opacity="0"/>
+          <stop offset=".9" stop-color="#ffb454" stop-opacity=".55"/>
+          <stop offset="1" stop-color="#ffe2b8" stop-opacity="1"/>
+        </linearGradient>
+        <radialGradient id="haloG" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="#ffb454" stop-opacity=".30"/>
+          <stop offset=".6" stop-color="#a06bff" stop-opacity=".10"/>
+          <stop offset="1" stop-color="#a06bff" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="fillG" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#ffb454"/><stop offset="1" stop-color="#ff8a7a"/>
+        </linearGradient>
+        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="2.4" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <clipPath id="pageClip"><rect x="6" y="152" width="164" height="152"/></clipPath>
+      </defs>
+
+      <circle class="halo" cx="279" cy="214" r="150"/>
+      <circle class="orbit" cx="279" cy="214" r="128"/>
+
+      <!-- the website being read -->
+      <rect class="card" x="6" y="128" width="164" height="176" rx="14"/>
+      <rect class="bar" x="6.6" y="128.6" width="162.8" height="24" rx="13"/>
+      <circle class="dot1" cx="20" cy="140.5" r="3.2"/><circle class="dot2" cx="30" cy="140.5" r="3.2"/><circle class="dot3" cx="40" cy="140.5" r="3.2"/>
+      <rect class="url" x="52" y="134" width="108" height="13" rx="6.5"/>
+      <text class="url-t" x="60" y="143.4">yourbusiness.com</text>
+      <rect class="ln h" x="20" y="168" width="104" height="9" rx="4.5"/>
+      <rect class="ln" x="20" y="188" width="138" height="5" rx="2.5"/>
+      <rect class="ln" x="20" y="199" width="120" height="5" rx="2.5"/>
+      <rect class="ln" x="20" y="210" width="130" height="5" rx="2.5"/>
+      <rect class="img" x="20" y="226" width="64" height="58" rx="7"/>
+      <rect class="ln" x="94" y="230" width="62" height="5" rx="2.5"/>
+      <rect class="ln" x="94" y="241" width="54" height="5" rx="2.5"/>
+      <rect class="ln" x="94" y="252" width="60" height="5" rx="2.5"/>
+      <rect class="ln" x="94" y="263" width="40" height="5" rx="2.5"/>
+      <g clip-path="url(#pageClip)"><rect class="scanline" x="6" y="140" width="164" height="16"/></g>
+
+      <!-- beams: page -> robot's eyes, robot's core -> each score -->
+      <path class="beam" d="M170 214 C 210 214, 226 182, 262 182"/>
+      <path class="pulse p1" pathLength="100" d="M170 214 C 210 214, 226 182, 262 182"/>
+      <g>
+        <path class="beam c" d="M317 252 C 360 252, 362 140, 402 140"/>
+        <path class="beam c" d="M317 252 C 360 252, 362 184, 402 184"/>
+        <path class="beam c" d="M317 252 C 360 252, 362 228, 402 228"/>
+        <path class="beam c" d="M317 252 C 360 252, 362 272, 402 272"/>
+        <path class="beam c" d="M317 252 C 360 252, 362 316, 402 316"/>
+        <path class="pulse c o1" pathLength="100" d="M317 252 C 360 252, 362 140, 402 140"/>
+        <path class="pulse c o2" pathLength="100" d="M317 252 C 360 252, 362 184, 402 184"/>
+        <path class="pulse c o3" pathLength="100" d="M317 252 C 360 252, 362 228, 402 228"/>
+        <path class="pulse c o4" pathLength="100" d="M317 252 C 360 252, 362 272, 402 272"/>
+        <path class="pulse c o5" pathLength="100" d="M317 252 C 360 252, 362 316, 402 316"/>
+      </g>
+
+      <!-- the robot -->
+      <g transform="translate(200 118) scale(.66)">
+        <g class="bot">
+          <path class="bot-ant" d="M120 46 L120 24"/>
+          <circle class="bot-bulb" cx="120" cy="18" r="7.5"/>
+          <rect class="bot-arm" x="38" y="150" width="20" height="62" rx="10"/>
+          <rect class="bot-arm bot-arm-r" x="182" y="150" width="20" height="62" rx="10"/>
+          <rect class="bot-body" x="52" y="46" width="136" height="104" rx="34"/>
+          <rect class="bot-face" x="68" y="62" width="104" height="66" rx="26"/>
+          <ellipse class="bot-eye" cx="100" cy="94" rx="9.5" ry="12"/>
+          <ellipse class="bot-eye" cx="140" cy="94" rx="9.5" ry="12"/>
+          <ellipse class="bot-cheek" cx="82" cy="112" rx="8" ry="5"/>
+          <ellipse class="bot-cheek" cx="158" cy="112" rx="8" ry="5"/>
+          <path class="bot-smile" d="M108 116 Q120 124 132 116"/>
+          <rect class="bot-body" x="62" y="158" width="116" height="96" rx="30"/>
+          <rect class="bot-plate" x="78" y="174" width="84" height="64" rx="22"/>
+          <circle class="bot-core" cx="120" cy="206" r="17" stroke-dasharray="22 14"/>
+          <circle class="bot-dot" cx="120" cy="206" r="6"/>
+        </g>
+      </g>
+
+      <!-- the five scores -->
+      <g>
+        <rect class="chip" x="402" y="123" width="152" height="34" rx="10"/>
+        <text class="chip-l" x="416" y="146">S</text><text class="chip-n" x="434" y="137">VISIBILITY</text>
+        <rect class="track" x="434" y="143" width="106" height="5" rx="2.5"/>
+        <rect class="fill f1" x="434" y="143" width="96" height="5" rx="2.5" fill="url(#fillG)"/>
+
+        <rect class="chip" x="402" y="167" width="152" height="34" rx="10"/>
+        <text class="chip-l" x="416" y="190">C</text><text class="chip-n" x="434" y="181">CLARITY</text>
+        <rect class="track" x="434" y="187" width="106" height="5" rx="2.5"/>
+        <rect class="fill f2" x="434" y="187" width="70" height="5" rx="2.5" fill="url(#fillG)"/>
+
+        <rect class="chip" x="402" y="211" width="152" height="34" rx="10"/>
+        <text class="chip-l" x="416" y="234">A</text><text class="chip-n" x="434" y="225">STRUCTURE</text>
+        <rect class="track" x="434" y="231" width="106" height="5" rx="2.5"/>
+        <rect class="fill f3" x="434" y="231" width="82" height="5" rx="2.5" fill="url(#fillG)"/>
+
+        <rect class="chip" x="402" y="255" width="152" height="34" rx="10"/>
+        <text class="chip-l" x="416" y="278">L</text><text class="chip-n" x="434" y="269">AUTHORITY</text>
+        <rect class="track" x="434" y="275" width="106" height="5" rx="2.5"/>
+        <rect class="fill f4" x="434" y="275" width="44" height="5" rx="2.5" fill="url(#fillG)"/>
+
+        <rect class="chip" x="402" y="299" width="152" height="34" rx="10"/>
+        <text class="chip-l" x="416" y="322">E</text><text class="chip-n" x="434" y="313">MOMENTUM</text>
+        <rect class="track" x="434" y="319" width="106" height="5" rx="2.5"/>
+        <rect class="fill f5" x="434" y="319" width="60" height="5" rx="2.5" fill="url(#fillG)"/>
+      </g>
+    </svg>
   </section>
 
+  <!-- ============================================================= results -->
   <section class="results" id="results">
     <div class="wrap">
-
       <div class="card">
         <div class="headline">
           <div class="bigscore" id="overall">&mdash;</div>
@@ -49,117 +212,296 @@
             <div class="s" id="verdict">&nbsp;</div>
           </div>
         </div>
-        <div class="stages" id="stages"></div>
+        <div class="stages" id="stagesRow"></div>
       </div>
-
       <div class="card">
         <div class="sec-h">The five dimensions</div>
         <p class="lead">One per stage of S.C.A.L.E. Each is a count of named checks,
           not an opinion &mdash; so next month&rsquo;s number means something.</p>
         <div class="dims" id="dims"></div>
-        <div class="locked" id="momentumNote" style="margin-top:16px">
-          <b>Momentum needs a second scan.</b> There is nothing to measure against yet,
-          so it is left empty rather than filled with a number that would mean nothing.
+        <div class="locked" style="margin-top:16px">
+          <b>Momentum needs a second scan.</b> There is nothing to measure against yet.
+          <a href="/app/" style="color:var(--amber)">Create a free account</a> and next month&rsquo;s
+          scan will show you which way you are moving.
         </div>
       </div>
-
       <div class="card">
         <div class="sec-h">Fix these first</div>
         <p class="lead">Ranked by how much each one moves the score, heaviest first.</p>
         <div class="actions" id="actions"></div>
       </div>
+    </div>
+  </section>
 
+  <!-- ========================================================= how it works -->
+  <section class="lp-sec" id="how">
+    <div class="kicker">What happens when you press scan</div>
+    <h2>Ten seconds, three things, <span class="g">no guesswork.</span></h2>
+    <p class="lede">AI systems don&rsquo;t look at your website. They read it. The scan reads it
+      the same way, then tells you what they can and can&rsquo;t understand about you.</p>
+    <div class="steps3">
+      <div class="step3 glass">
+        <div class="ic"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg></div>
+        <span class="n">01 &mdash; READ</span>
+        <h3>We read your site like an AI does</h3>
+        <p>Not how it looks &mdash; what it says. Headings, structured data, and the facts
+          a model can extract about you and repeat to someone else.</p>
+      </div>
+      <div class="step3 glass">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></div>
+        <span class="n">02 &mdash; SCORE</span>
+        <h3>Twenty-two checks, five scores</h3>
+        <p>Every point is a named check, never an opinion. Run it again next month and
+          any change in the number is a real change in your business.</p>
+      </div>
+      <div class="step3 glass">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg></div>
+        <span class="n">03 &mdash; FIX</span>
+        <h3>A fix list, heaviest first</h3>
+        <p>Ranked by how much each item moves your score, so the first hour you spend
+          is the most valuable hour you spend.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== the five stages -->
+  <section class="lp-sec" id="stages">
+    <div class="kicker">The method</div>
+    <h2>Five stages. <span class="g">One system that compounds.</span></h2>
+    <p class="lede">S.C.A.L.E. is the framework behind every Siamak Kalhor engagement.
+      Each stage has its own score, so you always know where you stand and what comes next.</p>
+    <div class="stages5">
+      <div class="stg glass"><span class="L">S</span><h3>Scan</h3>
+        <p>A forensic look at your digital and AI footprint. Broken signals, missed
+          opportunities, the honest baseline.</p><div class="m">Measures visibility</div></div>
+      <div class="stg glass"><span class="L">C</span><h3>Clarify</h3>
+        <p>Positioning built on real differentiators that a model and a human can both
+          understand and repeat back.</p><div class="m">Measures clarity</div></div>
+      <div class="stg glass"><span class="L">A</span><h3>Amplify</h3>
+        <p>Structured content, schema and citations engineered for retrieval and trust
+          across search and AI.</p><div class="m">Measures structure</div></div>
+      <div class="stg glass"><span class="L">L</span><h3>Leverage</h3>
+        <p>Trust that transfers: profiles, partnerships and authority that reach
+          beyond your own website.</p><div class="m">Measures authority</div></div>
+      <div class="stg glass"><span class="L">E</span><h3>Evaluate</h3>
+        <p>Measured every month, the same way every time. Refine, repeat,
+          compound.</p><div class="m">Measures momentum</div></div>
+    </div>
+  </section>
+
+  <!-- ==================================================== line vs report -->
+  <section class="lp-sec">
+    <div class="split">
+      <div>
+        <div class="kicker">Why it works</div>
+        <h2>A report tells you where you are. <span class="g">A line tells you where you&rsquo;re going.</span></h2>
+        <p class="lede" style="margin-bottom:24px">Every audit tool hands you a PDF you read
+          once and file. S.C.A.L.E. measures the same twenty-two checks the same way every
+          month, so you can finally see whether the work is working.</p>
+        <ul>
+          <li><span><b>Repeatable.</b> No AI guesses at your score, so it can&rsquo;t drift from one month to the next.</span></li>
+          <li><span><b>Explainable.</b> Every point lost names the check that lost it.</span></li>
+          <li><span><b>Honest.</b> Momentum stays empty until there is something real to measure.</span></li>
+        </ul>
+      </div>
+      <div class="chartcard glass">
+        <div class="lab"><span>Overall score over six months</span><span>Illustration</span></div>
+        <svg viewBox="0 0 520 240" role="img" aria-label="Illustration of a score rising over six months">
+          <defs><linearGradient id="areaG" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffb454" stop-opacity=".32"/>
+            <stop offset="1" stop-color="#ffb454" stop-opacity="0"/></linearGradient></defs>
+          <g stroke="#1f2836" stroke-width="1">
+            <line x1="40" y1="30" x2="510" y2="30"/><line x1="40" y1="90" x2="510" y2="90"/>
+            <line x1="40" y1="150" x2="510" y2="150"/><line x1="40" y1="210" x2="510" y2="210"/>
+          </g>
+          <g fill="#8fa0b4" font-family="JetBrains Mono, monospace" font-size="10">
+            <text x="8" y="34">100</text><text x="14" y="94">75</text>
+            <text x="14" y="154">50</text><text x="14" y="214">25</text>
+            <text x="34" y="232">M1</text><text x="124" y="232">M2</text><text x="218" y="232">M3</text>
+            <text x="312" y="232">M4</text><text x="406" y="232">M5</text><text x="492" y="232">M6</text>
+          </g>
+          <path d="M40 170 L134 158 L228 128 L322 110 L416 84 L506 62 L506 210 L40 210 Z" fill="url(#areaG)"/>
+          <path d="M40 170 L134 158 L228 128 L322 110 L416 84 L506 62" fill="none" stroke="#ffb454"
+                stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+          <g fill="#0b0f16" stroke="#ffb454" stroke-width="2">
+            <circle cx="40" cy="170" r="4"/><circle cx="134" cy="158" r="4"/><circle cx="228" cy="128" r="4"/>
+            <circle cx="322" cy="110" r="4"/><circle cx="416" cy="84" r="4"/><circle cx="506" cy="62" r="5"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================= founder -->
+  <section class="lp-sec">
+    <div class="founder glass">
+      <img src="/assets/silhouette.svg" alt="Siamak Kalhor" width="150" height="150">
+      <div>
+        <div class="kicker">Who built this</div>
+        <blockquote>&ldquo;Most businesses don&rsquo;t fail on product. They fail on being
+          understood. This is the system I use to fix that, made so anyone can run it.&rdquo;</blockquote>
+        <p>Siamak Kalhor has spent forty years building brands, and the last several engineering
+          them for AI search. S.C.A.L.E. is his consulting method, turned into software.
+          <a href="https://siamakconsulting.com/">Work with Siamak directly &rarr;</a></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================= faq -->
+  <section class="lp-sec" id="faq">
+    <div class="kicker">Questions</div>
+    <h2>Before you scan.</h2>
+    <div class="faq" style="margin-top:30px">
+      <details class="glass"><summary>What does S.C.A.L.E. actually check?</summary>
+        <div class="a">Twenty-two named checks across four measurable dimensions: whether AI
+          crawlers can read your page, whether your role and positioning are stated plainly,
+          whether your structured data is present and valid, and whether your profiles and
+          citations connect back to you. The fifth dimension, momentum, is the change between scans.</div></details>
+      <details class="glass"><summary>Is the scan really free?</summary>
+        <div class="a">Yes. The scan needs no account. A free account saves your results, which
+          is what lets the second scan measure momentum.</div></details>
+      <details class="glass"><summary>How is this different from an SEO audit?</summary>
+        <div class="a">An SEO audit measures how a page ranks in a list of links. S.C.A.L.E.
+          measures whether an AI system can understand your business well enough to recommend it,
+          which depends on different signals: a clearly stated identity, structured data, and
+          corroboration from other sources.</div></details>
+      <details class="glass"><summary>How often should I scan?</summary>
+        <div class="a">Monthly. Scores move when you change your site or your profiles, and a
+          monthly rhythm shows a real trend without chasing noise.</div></details>
+      <details class="glass"><summary>Do you store my website?</summary>
+        <div class="a">The free scan reads the public page you enter and does not keep it. With an
+          account, results are stored privately and are visible only to you.</div></details>
+    </div>
+  </section>
+
+  <!-- ================================================================= cta -->
+  <section class="lp-sec">
+    <div class="cta glass">
+      <h2>Ten seconds to find out <span class="g">what AI thinks of you.</span></h2>
+      <p class="lede">Enter your website. The robot does the rest.</p>
+      <form class="scanbar js-scan" autocomplete="off">
+        <label for="site2" style="position:absolute;left:-9999px">Your website</label>
+        <input id="site2" name="site" type="text" inputmode="url" placeholder="yourbusiness.com" required>
+        <button type="submit" class="btn btn-pri">Run the free scan</button>
+      </form>
     </div>
   </section>
 </main>
 
+<footer class="lp-foot">
+  <div class="in">
+    <span>&copy; 2026 Siamak Kalhor Consulting &middot; Los Angeles</span>
+    <span><a href="https://siamakconsulting.com/">siamakconsulting.com</a> &middot;
+      <a href="/app/">Sign in</a></span>
+  </div>
+</footer>
+
 <script>
-const STAGES = [
-  ['S','Scan','visibility'], ['C','Clarify','clarity'], ['A','Amplify','structure'],
-  ['L','Leverage','authority'], ['E','Evaluate','momentum']
-];
-const LABEL = { visibility:'Visibility', clarity:'Clarity', structure:'Structure',
-                authority:'Authority', momentum:'Momentum' };
-
-function colorFor(v){
-  if (v === null || v === undefined) return 'var(--line-bright)';
-  if (v >= 80) return 'var(--good)';
-  if (v >= 55) return 'var(--mid)';
-  return 'var(--bad)';
-}
-function verdictFor(v){
-  if (v >= 85) return 'Strong. AI systems can read you clearly.';
-  if (v >= 70) return 'Solid foundation, with real gaps worth closing.';
-  if (v >= 50) return 'Readable, but you are leaving authority on the table.';
-  return 'AI systems are struggling to understand this business.';
-}
-
-const form = document.getElementById('scanForm');
-const go   = document.getElementById('go');
-const err  = document.getElementById('err');
-
-form.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const site = document.getElementById('site').value.trim();
-  if (!site) return;
-
-  err.classList.remove('on');
-  go.disabled = true;
-  go.innerHTML = '<span class="spin"></span>Scanning';
-
-  try {
-    const r = await fetch('/api/demo-scan', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ url: site })
-    });
-    const data = await r.json();
-    if (!r.ok || data.error) throw new Error(data.error || 'Scan failed');
-    render(data);
-  } catch (e2) {
-    err.textContent = e2.message || 'Something went wrong. Try again.';
-    err.classList.add('on');
-  } finally {
-    go.disabled = false;
-    go.textContent = 'Run the scan';
+/* ------------------------------------------------------------ starfield ---
+   Decorative only. One canvas, a few hundred points, slow drift and twinkle.
+   Stops when the tab is hidden; draws a single still frame under reduced motion. */
+(function(){
+  const c = document.getElementById('stars'); if (!c) return;
+  const x = c.getContext('2d');
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let W, H, dpr, stars = [], raf;
+  function size(){
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = c.clientWidth; H = c.clientHeight;
+    c.width = W * dpr; c.height = H * dpr; x.setTransform(dpr,0,0,dpr,0,0);
+    const n = Math.round(W * H / 5200);
+    stars = Array.from({length:n}, () => ({
+      x: Math.random()*W, y: Math.random()*H, r: Math.random()*1.25 + .2,
+      a: Math.random()*.7 + .2, t: Math.random()*6.28, s: Math.random()*.012 + .004,
+      v: Math.random()*.06 + .01,
+      hue: Math.random() < .12 ? (Math.random() < .5 ? '255,200,140' : '150,225,255') : '235,242,255'
+    }));
   }
+  function frame(){
+    x.clearRect(0,0,W,H);
+    for (const s of stars){
+      if (!still){ s.t += s.s; s.x -= s.v; if (s.x < -2) s.x = W + 2; }
+      const a = s.a * (still ? 1 : (.55 + .45*Math.sin(s.t)));
+      x.beginPath(); x.arc(s.x, s.y, s.r, 0, 6.283);
+      x.fillStyle = 'rgba(' + s.hue + ',' + a.toFixed(3) + ')'; x.fill();
+    }
+    if (!still) raf = requestAnimationFrame(frame);
+  }
+  size(); frame();
+  addEventListener('resize', () => { cancelAnimationFrame(raf); size(); frame(); });
+  document.addEventListener('visibilitychange', () => {
+    if (still) return;
+    if (document.hidden) cancelAnimationFrame(raf); else frame();
+  });
+})();
+
+/* ----------------------------------------------------------------- scan --- */
+const STAGES = [['S','Scan','visibility'],['C','Clarify','clarity'],['A','Amplify','structure'],
+                ['L','Leverage','authority'],['E','Evaluate','momentum']];
+const LABEL = {visibility:'Visibility',clarity:'Clarity',structure:'Structure',
+               authority:'Authority',momentum:'Momentum'};
+const colorFor = v => typeof v !== 'number' ? 'var(--line-bright)'
+  : v >= 80 ? 'var(--good)' : v >= 55 ? 'var(--mid)' : 'var(--bad)';
+const verdictFor = v => v >= 85 ? 'Strong. AI systems can read you clearly.'
+  : v >= 70 ? 'Solid foundation, with real gaps worth closing.'
+  : v >= 50 ? 'Readable, but you are leaving authority on the table.'
+  : 'AI systems are struggling to understand this business.';
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g,
+  c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const viz = document.getElementById('viz');
+const err = document.getElementById('err');
+
+document.querySelectorAll('.js-scan').forEach(form => {
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const input = form.querySelector('input');
+    const btn = form.querySelector('button');
+    const site = input.value.trim(); if (!site) return;
+
+    err.classList.remove('on');
+    btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Scanning';
+    viz.classList.add('busy');
+    if (form !== document.querySelector('.js-scan'))
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    try {
+      const r = await fetch('/api/demo-scan', { method:'POST',
+        headers:{'Content-Type':'application/json'}, body: JSON.stringify({ url: site }) });
+      const d = await r.json();
+      if (!r.ok || d.error) throw new Error(d.error || 'Scan failed');
+      render(d);
+    } catch (e2) {
+      err.textContent = e2.message || 'Something went wrong. Try again.';
+      err.classList.add('on');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Run the free scan';
+      viz.classList.remove('busy');
+    }
+  });
 });
 
 function render(d){
   document.getElementById('overall').textContent = d.overall ?? '—';
   document.getElementById('host').textContent = d.host || '';
   document.getElementById('verdict').textContent = verdictFor(d.overall ?? 0);
-
-  document.getElementById('stages').innerHTML = STAGES.map(([l,w,dim]) => {
-    const v = d.scores[dim];
-    return `<div class="st ${typeof v === 'number' ? 'done' : ''}">
-      <div class="l">${l}</div><div class="w">${w}</div></div>`;
-  }).join('');
-
+  document.getElementById('stagesRow').innerHTML = STAGES.map(([l,w,dim]) =>
+    `<div class="st ${typeof d.scores[dim] === 'number' ? 'done' : ''}">
+      <div class="l">${l}</div><div class="w">${w}</div></div>`).join('');
   document.getElementById('dims').innerHTML = STAGES.map(([l,w,dim]) => {
-    const v = d.scores[dim];
-    const has = typeof v === 'number';
-    return `<div class="dim">
-      <div><div class="n">${LABEL[dim]}</div><div class="stage">${w}</div></div>
+    const v = d.scores[dim], has = typeof v === 'number';
+    return `<div class="dim"><div><div class="n">${LABEL[dim]}</div><div class="stage">${w}</div></div>
       <div class="track"><div class="fill" style="width:${has ? v : 0}%;background:${colorFor(v)}"></div></div>
-      <div class="v ${has ? '' : 'null'}">${has ? v : '—'}</div>
-    </div>`;
+      <div class="v ${has ? '' : 'null'}">${has ? v : '—'}</div></div>`;
   }).join('');
-
-  const acts = d.findings || [];
-  document.getElementById('actions').innerHTML = acts.length
-    ? acts.slice(0,10).map(f => `<div class="act">
-        <div class="sev ${f.severity}"></div>
-        <div><div class="t">${esc(f.title)}</div><div class="d">${esc(f.detail)}</div></div>
-        <div class="imp">+${f.weight}</div></div>`).join('')
+  const f = d.findings || [];
+  document.getElementById('actions').innerHTML = f.length
+    ? f.slice(0,10).map(x => `<div class="act"><div class="sev ${x.severity}"></div>
+        <div><div class="t">${esc(x.title)}</div><div class="d">${esc(x.detail)}</div></div>
+        <div class="imp">+${x.weight}</div></div>`).join('')
     : '<div class="empty">Nothing failing. Every check passed on this page.</div>';
-
-  document.getElementById('results').classList.add('on');
-  document.getElementById('results').scrollIntoView({ behavior:'smooth', block:'start' });
-}
-
-function esc(s){
-  return String(s == null ? '' : s).replace(/[&<>"']/g,
-    c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const res = document.getElementById('results');
+  res.classList.add('on');
+  res.scrollIntoView({ behavior:'smooth', block:'start' });
 }
 </script>
 </body>
