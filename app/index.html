@@ -184,8 +184,11 @@ $('authForm').addEventListener('submit', async (e) => {
     options: { emailRedirectTo: window.location.origin }
   });
   $('authMsg').className = 'msg' + (error ? '' : ' good');
-  $('authMsg').textContent = error ? error.message
-    : 'Sent to ' + email + '. Open the newest email from Supabase and tap the link. It works on any device.';
+  $('authMsg').textContent = error
+    ? (/after \d+ seconds|rate limit/i.test(error.message)
+        ? 'A link was just sent. Wait a minute before asking for another, and use the newest email.'
+        : error.message)
+    : 'Sent to ' + email + '. Look for an email from S.C.A.L.E. (login@siamakconsulting.com) and tap the button. Not there within a minute? Check your Spam or Promotions folder.';
   btn.disabled = false; btn.textContent = 'Email me a link';
 });
 
