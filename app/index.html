@@ -177,7 +177,11 @@ $('authForm').addEventListener('submit', async (e) => {
   const email = $('email').value.trim();
   const { error } = await sb.auth.signInWithOtp({
     email,
-    options: { emailRedirectTo: window.location.origin + '/app/' }
+    // The bare origin, because that is the exact entry in Supabase's Redirect
+    // URLs list. Asking for /app/ did not match it, so Supabase fell back to
+    // the Site URL (localhost:3000). The root page forwards the session on to
+    // /app/ itself, so landing there costs nothing.
+    options: { emailRedirectTo: window.location.origin }
   });
   $('authMsg').className = 'msg' + (error ? '' : ' good');
   $('authMsg').textContent = error ? error.message
