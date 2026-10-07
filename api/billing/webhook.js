@@ -26,31 +26,44 @@ function readRaw(req) {
   });
 }
 
-async function sync(db, sub) {
-  const item = sub.items && sub.items.data && sub.items.data[0];
-  const priceId = item && item.price && item.price.id;
-  const plan = PLAN_BY_PRICE[priceId] || (item && item.price && item.price.metadata && item.price.metadata.plan);
-  const customer = typeof sub.customer === 'string' ? sub.customer : sub.customer && sub.customer.id;
-  let owner = sub.metadata && sub.metadata.owner_id;
-  if (!owner && customer) {
-    const { data } = await db.from('subscriptions').select('owner_id').eq('stripe_customer_id', customer).maybeSingle();
-    owner = data && data.owner_id;
-  }
-  if (!owner) return { skipped: 'no owner for ' + sub.id };
-  if (!plan) return { skipped: 'price not a S.C.A.L.E. plan: ' + priceId };
-  // current_period_end moved from the subscription to its items in newer API
-  // versions; read whichever is present.
-  const end = sub.current_period_end || (item && item.current_period_end);
+// Stripe does not guarantee event order: on 2026-10-07 a "created (incomplete)"
+// event was processed 0.4s AFTER "updated (active)" and left a paying customer
+// shown as Free, who then paid a second time. So events are only a nudge here.
+// We ignore what the event says and re-read the customer's subscriptions from
+// Stripe, then store the best live one. Order no longer matters, and a
+// cancelled duplicate can never overwrite an active subscription.
+const RANK = { active: 4, trialing: 4, past_due: 3, incomplete: 1, unpaid: 0, canceled: 0, incomplete_expired: 0, paused: 0 };
+
+async function ownerFor(db, sub, customer) {
+  if (sub && sub.metadata && sub.metadata.owner_id) return sub.metadata.owner_id;
+  const { data } = await db.from('subscriptions').select('owner_id').eq('stripe_customer_id', customer).maybeSingle();
+  return data && data.owner_id;
+}
+
+async function syncCustomer(s, db, customer, hint) {
+  const list = await s.subscriptions.list({ customer, status: 'all', limit: 20 });
+  const ours = list.data.filter((x) => {
+    const pid = x.items && x.items.data[0] && x.items.data[0].price && x.items.data[0].price.id;
+    return !!PLAN_BY_PRICE[pid];
+  });
+  if (!ours.length) return { skipped: 'no S.C.A.L.E. subscription on ' + customer };
+  ours.sort((a, b) => (RANK[b.status] || 0) - (RANK[a.status] || 0) || b.created - a.created);
+  const best = ours[0];
+  const item = best.items.data[0];
+  const owner = await ownerFor(db, best.metadata && best.metadata.owner_id ? best : hint, customer);
+  if (!owner) return { skipped: 'no owner for ' + customer };
+  const end = best.current_period_end || item.current_period_end;
   const row = {
-    owner_id: owner, plan, status: sub.status,
-    stripe_customer_id: customer, stripe_subscription_id: sub.id,
+    owner_id: owner, plan: PLAN_BY_PRICE[item.price.id], status: best.status,
+    stripe_customer_id: customer, stripe_subscription_id: best.id,
     current_period_end: end ? new Date(end * 1000).toISOString() : null,
-    cancel_at_period_end: !!sub.cancel_at_period_end,
+    cancel_at_period_end: !!best.cancel_at_period_end,
     updated_at: new Date().toISOString(),
   };
   const { error } = await db.from('subscriptions').upsert(row, { onConflict: 'owner_id' });
   if (error) throw new Error(error.message);
-  return { owner, plan, status: sub.status };
+  const live = ours.filter((x) => ['active', 'trialing', 'past_due'].includes(x.status));
+  return { owner, plan: row.plan, status: row.status, sub: best.id, live_subs: live.length };
 }
 
 module.exports = async function handler(req, res) {
@@ -70,13 +83,11 @@ module.exports = async function handler(req, res) {
   const db = admin();
   try {
     let out = { ignored: event.type };
-    if (event.type === 'checkout.session.completed') {
-      const cs = event.data.object;
-      if (cs.mode === 'subscription' && cs.subscription) {
-        out = await sync(db, await s.subscriptions.retrieve(cs.subscription));
-      }
-    } else if (event.type.startsWith('customer.subscription.')) {
-      out = await sync(db, event.data.object);
+    const obj = event.data.object;
+    const customer = typeof obj.customer === 'string' ? obj.customer : obj.customer && obj.customer.id;
+    if ((event.type === 'checkout.session.completed' && obj.mode === 'subscription') ||
+        event.type.startsWith('customer.subscription.')) {
+      if (customer) out = await syncCustomer(s, db, customer, obj);
     }
     console.log(JSON.stringify({ source: 'stripe-webhook', type: event.type, id: event.id, ...out }));
     return res.status(200).json({ received: true });
@@ -89,3 +100,4 @@ module.exports = async function handler(req, res) {
 
 // Keep the raw body intact for signature verification.
 module.exports.config = { api: { bodyParser: false } };
+module.exports.syncCustomer = syncCustomer;

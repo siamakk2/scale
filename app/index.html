@@ -524,7 +524,8 @@ $('dActions').addEventListener('change', async (e) => {
     }
     notice(ME && ME.plan !== 'free'
       ? `You're on <b>${esc(ME.limits.name)}</b>. Thank you. Rescan any time, and your automatic monthly scan is on.`
-      : 'Payment received. Your plan is still updating; refresh in a minute. If it doesn\'t change, email siamakk2@gmail.com.');
+      : '<b>Payment received. Please don\'t pay again.</b> Your plan is switching on; refresh this page in a minute. If it still shows Free, email siamakk2@gmail.com and it will be fixed.');
+    if (ME && ME.plan === 'free') $('upgradeCard').style.display = 'none';
   }
   if (!list || !list.length) {
     // Prefill from the site they scanned on the landing page, so the first

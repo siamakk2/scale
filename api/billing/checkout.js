@@ -25,6 +25,18 @@ module.exports = async function handler(req, res) {
   const { data: sub } = await db.from('subscriptions').select('*').eq('owner_id', user.id).maybeSingle();
 
   let customer = sub && sub.stripe_customer_id;
+  // Never sell a second subscription. Ask Stripe directly, not our own table,
+  // because our table can lag a few seconds behind a payment that just went
+  // through -- which is exactly how a customer got charged twice.
+  if (customer) {
+    const existing = await s.subscriptions.list({ customer, status: 'all', limit: 10 });
+    const open = existing.data.filter((x) => ['active', 'trialing', 'past_due', 'incomplete'].includes(x.status));
+    if (open.length) {
+      try { await require('./webhook').syncCustomer(s, db, customer, open[0]); } catch (e) {}
+      const portal = await s.billingPortal.sessions.create({ configuration: PORTAL_CONFIG, customer, return_url: SITE + '/app/' });
+      return res.status(200).json({ url: portal.url, portal: true, already: true });
+    }
+  }
   if (customer && effectivePlan(sub) !== 'free') {
     const portal = await s.billingPortal.sessions.create({ configuration: PORTAL_CONFIG, customer, return_url: SITE + '/app/' });
     return res.status(200).json({ url: portal.url, portal: true });
