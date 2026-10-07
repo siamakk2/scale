@@ -212,7 +212,11 @@ const SITEMAP = {
 const SUBMIT = 'Then submit the sitemap address in Google Search Console and Bing Webmaster Tools (both free), so they re-read your site sooner.';
 
 const H1 = {
-  shopify: (s) => s.h1Logo
+  shopify: (s) => s.h1Count === 0
+    ? ['Your theme does not mark any headline as the main heading.',
+       'Most Shopify themes don\'t let you choose heading levels in Customize, so this is a one-line theme change: the heading of your top banner becomes the main heading (H1), using the sentence below.',
+       'If you\'re comfortable with code: Online Store → Themes → ⋯ → Edit code, open the section file for your top banner, and change its heading tag to h1. Otherwise, have it done for you.']
+    : s.h1Logo
     ? ['Your theme wraps the logo in a main heading, so the main heading says your name instead of what you sell.',
        'Online Store → Themes → ⋯ → Edit code → sections/header.liquid. Search for "<h1" around the logo and change h1 to div on both the opening and closing tags. Save.',
        (() => { const other = (s.headings.h1 || []).find((h) => h && h.toLowerCase() !== String(s.siteName || '').toLowerCase());
@@ -549,7 +553,7 @@ function buildMissions(findings, signals, ctx) {
         steps: lead.steps,
         pastes,
         minutes: Math.max(...guides.filter(Boolean).map((g) => g.minutes || 10)),
-        technical: guides.some((g) => g && g.technical) || (m.key === 'heading' && p === 'shopify' && s.h1Logo),
+        technical: guides.some((g) => g && g.technical) || (m.key === 'heading' && p === 'shopify' && (s.h1Logo || s.h1Count === 0)),
         platform: p, platformName: NAMES[p],
       } : null,
     });
