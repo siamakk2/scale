@@ -103,23 +103,37 @@ async function askChatGPT(q, profile) {
   });
 }
 
-// Perplexity: the Sonar API, which answers with live web search and returns
-// the pages it used.
+// Perplexity: the Agent API (successor to Sonar, which was retired in 2026),
+// with its web_search tool. Responses-style output: the answer text in
+// output_text / message items, the pages it read in a search_results item.
+function collectUrls(node, out, depth = 0) {
+  if (!node || depth > 6) return;
+  if (Array.isArray(node)) { for (const x of node) collectUrls(x, out, depth + 1); return; }
+  if (typeof node === 'object') {
+    if (typeof node.url === 'string' && /^https?:/i.test(node.url)) out.push({ url: node.url, title: node.title || '' });
+    for (const k of Object.keys(node)) if (k !== 'text') collectUrls(node[k], out, depth + 1);
+  }
+}
 async function askPerplexity(q) {
   const key = process.env.PERPLEXITY_API_KEY;
   if (!key) return null;
   return withTimeout(async (signal) => {
-    const r = await fetch('https://api.perplexity.ai/chat/completions', {
+    const r = await fetch('https://api.perplexity.ai/v1/responses', {
       method: 'POST', signal,
       headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: process.env.PERPLEXITY_MODEL || 'sonar', messages: [{ role: 'user', content: q }] }),
+      body: JSON.stringify({ model: process.env.PERPLEXITY_MODEL || 'perplexity/sonar', input: q,
+        tools: [{ type: 'web_search' }], max_output_tokens: 1200 }),
     });
     const j = await r.json();
-    if (!r.ok) throw new Error('Perplexity ' + r.status + ': ' + JSON.stringify(j.error || j).slice(0, 160));
-    const text = (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || '';
-    const sources = (j.search_results && j.search_results.length
-      ? j.search_results.map((x) => ({ url: x.url, title: x.title || '' }))
-      : (j.citations || []).map((u) => ({ url: typeof u === 'string' ? u : u.url, title: '' }))).filter((x) => x.url);
+    if (!r.ok || j.status === 'failed') throw new Error('Perplexity ' + r.status + ': ' + JSON.stringify(j.error || j).slice(0, 200));
+    let text = j.output_text || '';
+    const sources = [];
+    for (const item of j.output || []) {
+      if (item.type === 'message') {
+        for (const c of item.content || []) if (c.type === 'output_text') { if (!j.output_text) text += c.text; collectUrls(c.annotations, sources); }
+      } else if (/search/.test(item.type || '')) collectUrls(item, sources);
+    }
+    if (!sources.length) collectUrls(j.search_results || j.citations, sources);
     return { text, sources };
   });
 }
