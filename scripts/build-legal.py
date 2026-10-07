@@ -10,7 +10,7 @@ something new, change the facts here first, then rebuild:
 import os, html
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-UPDATED = "October 6, 2026"  # paid plans added the same day
+UPDATED = "October 7, 2026"  # AI answer check (OpenAI, Perplexity) added
 
 def page(slug, title, desc, h1, intro, sections):
     toc = "".join(f'<li><a href="#{sid}">{html.escape(h)}</a></li>' for sid, h, _ in sections)
@@ -109,6 +109,7 @@ privacy = [
  "<tr><td>Business name, website address and, if you give it, your industry</td><td>To know which site to scan</td></tr>"
  "<tr><td>Scan history: scores, findings, the date, and the signals read from your <em>public</em> web page "
  "(title, headings, structured data, links)</td><td>So the next scan can show what changed</td></tr>"
+ "<tr><td>The questions we asked ChatGPT and Perplexity about your business, and their answers</td><td>So you can see whether AI names you, and how that changes</td></tr>"
  "<tr><td>Your action list, what you mark done or dismissed, and your stage progress</td><td>So your plan carries over between visits</td></tr>"
  "<tr><td>Positioning statements you write in the app, if any</td><td>So you can refine them over time</td></tr>"
  "</tbody></table></div>"
@@ -123,9 +124,24 @@ privacy = [
  "pre-filled website address.</p>"
  "<div class=\"box\"><p><strong>No advertising cookies, no analytics trackers, no ad pixels</strong> run in the S.C.A.L.E. app.</p></div>"),
 ("ai", "AI and your data",
- "<p>Scans are scored by our own rules-based engine: twenty-two named checks. <strong>Your data is not sent to any "
- "third-party AI service</strong> (such as OpenAI, Anthropic or Google) to produce your score, and we do not use your "
- "data to train AI models.</p>"),
+ "<p><strong>Your score</strong> is produced by our own rules-based engine: thirty named checks. No AI model is involved "
+ "in scoring, so the same page always gets the same score.</p>"
+ "<h3>The ChatGPT and Perplexity check</h3>"
+ "<p>To show you whether AI assistants actually recommend you, the app asks <strong>OpenAI (ChatGPT)</strong> and "
+ "<strong>Perplexity</strong> a few questions a customer might ask, through their business APIs. For example: "
+ "<em>“Who are the best tree service companies in Martinez, CA?”</em> and <em>“What can you tell me about "
+ "[your business] ([your website])?”</em></p>"
+ "<ul><li><strong>What we send:</strong> only those questions. They contain your business's public name, website "
+ "address, town and type of work, as read from your public home page.</li>"
+ "<li><strong>What we don't send:</strong> your email address, your account details, payment details, or anything "
+ "else about you as a person.</li>"
+ "<li><strong>What we keep:</strong> the questions, the answers, the businesses and websites the answers named, and "
+ "the date, stored with that scan so you can see how answers change over time.</li>"
+ "<li>OpenAI and Perplexity process the questions under their own API terms and privacy policies "
+ "(<a href=\"https://openai.com/policies/privacy-policy\">OpenAI</a>, "
+ "<a href=\"https://www.perplexity.ai/hub/legal/privacy-policy\">Perplexity</a>). We don't ask them to remember "
+ "anything about you.</li></ul>"
+ "<p>The free scan without an account does not use this check. We do not use your data to train AI models.</p>"),
 ("use", "How we use information",
  "<ul><li>To run scans, show your results and keep your history.</li>"
  "<li>To send sign-in emails. We'll only send anything else, such as product news, if you opt in.</li>"
@@ -142,6 +158,8 @@ privacy = [
  "<tr><td>Vercel</td><td>Hosting the app</td><td>United States and global edge network</td></tr>"
  "<tr><td>Resend</td><td>Sending sign-in emails</td><td>United States</td></tr>"
  "<tr><td>Stripe</td><td>Payments and subscriptions, for paid plans</td><td>United States</td></tr>"
+ "<tr><td>OpenAI</td><td>Answers the ChatGPT check's questions (business name, website, town and type of work only)</td><td>United States</td></tr>"
+ "<tr><td>Perplexity</td><td>Answers the Perplexity check's questions (same information)</td><td>United States</td></tr>"
  "</tbody></table></div>"
  ),
 ("retention", "How long we keep it",
@@ -166,7 +184,8 @@ privacy = [
  "<p>S.C.A.L.E. is a business tool for adults. It isn't directed to anyone under 18, and we don't knowingly collect "
  "information from children. If you think a child has given us information, contact us and we'll delete it.</p>"),
 ("site-owners", "If your website was scanned",
- "<p>The scanner reads only public web pages, one page per scan, the way a browser or search engine would. It "
+ "<p>The scanner reads only public pages, the way a browser or search engine would: the home page, plus the "
+ "site's <code>robots.txt</code>, <code>sitemap.xml</code> and <code>llms.txt</code> files. It "
  "identifies itself as <code>ScaleScan/1.0</code>. If you own a site and want it excluded, email us and we'll block it.</p>"),
 ("changes", "Changes to this policy",
  "<p>If we change what we collect or how we use it, we'll update this page and the date at the top. If the change is "
@@ -181,7 +200,9 @@ terms = [
  "<p>You must be at least 18 and, if you use the Service for a business, have authority to accept these terms for it.</p>"),
 ("service", "What the Service is",
  "<p>S.C.A.L.E. reads a public web page, runs it through a fixed set of named checks, and gives you scores across five "
- "dimensions and a ranked list of suggested fixes. A free account keeps your history so later scans can show change.</p>"
+ "dimensions and a ranked list of suggested fixes with step-by-step lessons. With an account it also asks ChatGPT and "
+ "Perplexity questions about your type of business and shows their answers. A free account keeps your history so later "
+ "scans can show change.</p>"
  "<p>The Service is new and still evolving. We may add, change or remove features, and we may limit or pause access "
  "when needed, for example to prevent abuse.</p>"),
 ("account", "Your account",
@@ -201,7 +222,9 @@ terms = [
  "<div class=\"box\"><p>Scores are an <strong>informational assessment of public signals</strong> on a web page. They "
  "are <strong>not a guarantee</strong> of search rankings, of being mentioned or recommended by any AI system, or of "
  "any business result.</p></div>"
- "<p>AI assistants and search engines are run by other companies, use signals we can't see, and change without notice. "
+ "<p>The ChatGPT and Perplexity answers we show are produced by those companies, not by us. They vary from day to day "
+ "and person to person, may be wrong or out of date, and are shown as a snapshot, not a ranking. "
+ "AI assistants and search engines are run by other companies, use signals we can't see, and change without notice. "
  "Suggested fixes are general guidance, not legal, financial or other professional advice, and you decide whether and "
  "how to act on them.</p>"),
 ("content", "Your data and our rights",

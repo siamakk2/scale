@@ -65,6 +65,32 @@
   .more{margin-top:12px;border:1px dashed var(--line-bright);border-radius:11px;padding:14px 16px;
         font-size:14px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
   @media(max-width:760px){.plans{grid-template-columns:1fr}}
+  /* ---- AI answers ---- */
+  .ans-head{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center;margin-bottom:16px}
+  .ans-big{font-family:var(--display);font-size:44px;font-weight:700;line-height:1}
+  .ans-big small{font-size:18px;color:var(--dim);font-weight:600}
+  .ans-big.zero{color:var(--bad)} .ans-big.some{color:var(--amber)} .ans-big.all{color:var(--good)}
+  .ans-sub{font-size:14px;color:var(--muted);line-height:1.55}
+  .ansq{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:14px 16px;margin-bottom:10px}
+  .ansq .q{font-weight:600;font-size:14.5px;margin-bottom:10px}
+  .ansq .q span{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);display:block;margin-bottom:3px;font-weight:400}
+  .ansrow{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  .eng{border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:var(--surface)}
+  .eng .e{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
+  .eng .v{font-weight:600;font-size:14px}
+  .eng .v.hit{color:var(--good)} .eng .v.miss{color:var(--bad)} .eng .v.err{color:var(--dim);font-weight:400}
+  .eng .who{font-size:13px;color:var(--muted);margin-top:5px;line-height:1.5}
+  .eng details{margin-top:8px} .eng summary{font-size:12.5px;color:var(--cyan);cursor:pointer}
+  .eng .full{font-size:13px;color:var(--muted);white-space:pre-wrap;line-height:1.55;max-height:260px;overflow:auto;margin-top:8px;border-top:1px solid var(--line);padding-top:8px}
+  .eng .srcs{margin-top:8px;font-size:12px;line-height:1.7}
+  .eng .srcs a{color:var(--cyan);text-decoration:none;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 6px}
+  .chip{font-size:12.5px;border:1px solid var(--line-bright);border-radius:100px;padding:5px 11px;color:var(--text)}
+  .chip.list{border-color:rgba(255,180,84,.55);color:var(--amber)}
+  .chip b{font-family:var(--mono);font-weight:600;color:var(--dim);margin-left:4px}
+  .ansnote{font-size:12.5px;color:var(--dim);margin-top:12px;line-height:1.6}
+  @media(max-width:640px){.ansrow{grid-template-columns:1fr}.ans-big{font-size:36px}}
+
   /* ---- guided plan ---- */
   .gain{display:flex;gap:18px;flex-wrap:wrap;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
   .gain .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
@@ -218,6 +244,12 @@
       <div class="aisees" id="aiSees"></div>
     </div>
 
+
+    <div class="card" id="ansCard" style="display:none">
+      <div class="sec-h">What ChatGPT and Perplexity actually say</div>
+      <p class="lead">We asked them the questions your customers ask. This is what they answered, who they named, and which websites they took the answer from.</p>
+      <div id="ansBody"></div>
+    </div>
     <div class="card" id="planCard">
       <div class="sec-h">Your action plan</div>
       <p class="lead" id="planLead">Each mission shows what we found on your home page, why it matters, exactly where to click on your platform, and the text to paste, written for your business. Do them in order: the biggest wins come first. Most need a computer, because site editors don't work well on phones.</p>
@@ -320,9 +352,9 @@ function notice(html, warn) {
   $('notice').innerHTML = html ? `<div class="notice ${warn ? 'warn' : ''}">${html}</div>` : '';
 }
 const FEATURES = {
-  free:   ['1 website', 'One scan every 30 days', 'Lessons for your top missions', 'Score history'],
-  growth: ['1 website', 'Rescan any time to see progress', 'Every mission, with step-by-step lessons', 'Automatic monthly scan'],
-  scale:  ['Up to 5 websites', 'Rescan any time to see progress', 'Every mission, with step-by-step lessons', 'Automatic monthly scans'],
+  free:   ['1 website', 'One scan every 30 days', 'Lessons for your top missions', 'Monthly ChatGPT & Perplexity check'],
+  growth: ['1 website', 'Rescan any time to see progress', 'Every mission, with step-by-step lessons', 'ChatGPT & Perplexity check with every scan', 'Automatic monthly scan'],
+  scale:  ['Up to 5 websites', 'Rescan any time to see progress', 'Every mission, with step-by-step lessons', 'ChatGPT & Perplexity check with every scan', 'Automatic monthly scans'],
 };
 async function loadMe() {
   const r = await api('/api/me');
@@ -461,7 +493,7 @@ $('rescan').addEventListener('click', () => runScan(false));
 // ----------------------------------------------------------- dashboard ----
 async function loadDash() {
   const { data: scans } = await sb.from('scans')
-    .select('id, overall_score, scores, findings, started_at, status, profile:raw->profile')
+    .select('id, overall_score, scores, findings, started_at, status, profile:raw->profile, answers:raw->answers')
     .eq('business_id', BIZ.id).eq('status','complete')
     .order('started_at', { ascending: false }).limit(12);
 
@@ -520,6 +552,7 @@ async function loadDash() {
   drawTrend(scans.filter(x => rub(x) === rub(latest)).reverse());
 
   renderProfile(latest.profile);
+  renderAnswers(latest, scans);
   renderPlan(latest, acts || [], prev);
   show('paneDash');
   resumeCheckout();
@@ -564,6 +597,70 @@ function renderProfile(p) {
       blocked === null ? 'Not checked on this scan' : blocked.length ? 'Blocked: ' + blocked.map(esc).join(', ') : 'ChatGPT, Claude, Perplexity and Google AI may read your site'),
     row('ok', 'Built with', esc(p.platformName || 'Custom'), 'Your instructions are written for ' + esc(p.platformName || 'your site')),
   ].join('');
+}
+
+
+// ------------------------------------------------- AI answers -------------
+let ANS_BUSY = false, ANS_OFF = false; const ANS_TRIED = new Set();
+function cleanMd(t) { return String(t || '').replace(/\*\*([^*]+)\*\*/g, '$1').replace(/^#+\s*/gm, '').replace(/\[(\d+)\]/g, '').trim(); }
+function renderAnswers(latest, scans) {
+  const card = $('ansCard'), body = $('ansBody');
+  if (ANS_OFF || !latest.profile) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+  const own = latest.answers;
+  const prev = !own && (scans || []).find(x => x.answers);
+  const A = own || prev;
+  if (!A) {
+    body.innerHTML = '<div class="locked"><span class="spin" style="border-color:rgba(255,255,255,.25);border-top-color:var(--amber)"></span><b>Asking ChatGPT and Perplexity…</b> the questions your customers ask. This takes about 30 seconds.</div>';
+    if (!ANS_BUSY && !ANS_TRIED.has(latest.id)) { ANS_TRIED.add(latest.id); fetchAnswers(); }
+    else if (!ANS_BUSY) body.innerHTML = '<div class="locked">The AI check didn\'t finish. Re-scan later to try again.</div>';
+    return;
+  }
+  const S = A.summary || {};
+  const cls = !S.asked ? '' : S.named === 0 ? 'zero' : S.named < S.asked ? 'some' : 'all';
+  const brandQ = A.questions.length - 1;
+  const by = (qi, eng) => A.results.find(r => r.q === qi && r.engine === eng);
+  const engs = ['chatgpt', 'perplexity'].filter(e => A.results.some(r => r.engine === e));
+  const engCell = (r, qi) => {
+    if (!r) return '';
+    if (r.error) return `<div class="eng"><div class="e">${esc(r.label)}</div><div class="v err">No answer (${esc(r.error)})</div></div>`;
+    const isBrand = qi === brandQ;
+    const ok = isBrand ? r.known : r.mentioned;
+    const verdict = isBrand ? (ok ? '✓ Knows your business' : '✕ Doesn\'t really know you')
+      : ok ? `✓ Named you${r.rank ? ' (#' + r.rank + ')' : ''}` : '✕ Didn\'t name you';
+    const who = !isBrand && r.named && r.named.length ? `<div class="who">${ok ? 'Also named' : 'Named instead'}: ${r.named.slice(0, 5).map(esc).join(' · ')}</div>` : '';
+    const srcs = (r.sources || []).slice(0, 6).map(x => `<a href="${esc(x.url)}" target="_blank" rel="noopener nofollow">${esc(x.domain)}${x.title ? ' — ' + esc(x.title) : ''}</a>`).join('');
+    return `<div class="eng"><div class="e">${esc(r.label)}</div><div class="v ${ok ? 'hit' : 'miss'}">${verdict}</div>${who}
+      <details><summary>Read the full answer${r.sources && r.sources.length ? ' and its sources' : ''}</summary>
+      <div class="full">${esc(cleanMd(r.text))}</div>${srcs ? `<div class="srcs">${srcs}</div>` : ''}</details></div>`;
+  };
+  const qs = A.questions.map((q, qi) => `<div class="ansq"><div class="q"><span>${qi === brandQ ? 'Asked about you by name' : 'A customer asks'}</span>${esc(q)}</div>
+    <div class="ansrow">${engs.map(e => engCell(by(qi, e), qi)).join('')}</div></div>`).join('');
+  const lists = (S.sources || []).filter(x => x.listing);
+  const chips = (S.sources || []).slice(0, 10).map(x => `<span class="chip ${x.listing ? 'list' : ''}">${esc(x.domain)}<b>${x.count}</b></span>`).join('');
+  const rivals = (S.rivals || []).slice(0, 6).map(x => esc(x.name) + (x.count > 1 ? ` (${x.count}×)` : '')).join(' · ');
+  body.innerHTML = `
+    <div class="ans-head"><div class="ans-big ${cls}">${S.named}<small> of ${S.asked}</small></div>
+      <div class="ans-sub"><b>${S.named === 0 ? 'Not named in any recommendation yet.' : S.named < S.asked ? 'Named in some recommendations.' : 'Named every time. Excellent.'}</b>
+      ${S.brandAsked ? ` Asked about you by name, ${S.known} of ${S.brandAsked} ${S.known === 1 && S.brandAsked > 1 ? 'knew' : 'knew'} who you are.` : ''}
+      ${rivals ? `<br>Named instead most often: ${rivals}.` : ''}</div></div>
+    ${qs}
+    ${chips ? `<h5 style="font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:16px 0 4px">Where these answers came from</h5>
+      <div class="chips">${chips}</div>
+      <div class="ans-sub">${lists.length ? `The <b style="color:var(--amber)">highlighted</b> ones are listing and review sites. AI leans on them to decide who to recommend. Make sure you have a complete profile on each (${lists.slice(0, 4).map(x => esc(x.domain)).join(', ')}), with exactly the same name, phone and address as your website, and ask happy customers for reviews there.`
+        : 'These are the sites the assistants read to answer. Getting mentioned on them (articles, directories, partners) is how you get into the answer.'}</div>` : ''}
+    <div class="ansnote">Asked ${new Date(A.at).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}${prev ? ' (from your last check)' : ''}.
+      AI answers vary by day, person and wording, so treat this as a snapshot, not a ranking. We ask again with every scan${ME && ME.plan === 'free' ? ' (monthly on Free)' : ''}, so your history shows whether you start being named.
+      Want to be named? <a href="https://siamakconsulting.com/online-consulting#book" target="_blank" rel="noopener" style="color:var(--amber)">Talk it through with Siamak</a>.</div>`;
+}
+async function fetchAnswers() {
+  ANS_BUSY = true;
+  try {
+    const r = await api('/api/answers', { method: 'POST', body: JSON.stringify({ business_id: BIZ.id }) });
+    if (r.status === 503) { ANS_OFF = !(ME && ME.is_admin); if (!ANS_OFF) $('ansBody').innerHTML = '<div class="locked"><b>Admin:</b> add OPENAI_API_KEY and/or PERPLEXITY_API_KEY in Vercel (scale project) and redeploy to switch this on. Customers don\'t see this card until then.</div>'; else $('ansCard').style.display = 'none'; return; }
+    if (r.ok) { await loadDash(); return; }
+    $('ansBody').innerHTML = `<div class="locked">${esc(r.out.error || 'The AI check could not run just now.')}${r.status === 402 ? ' <a href="#" onclick="document.getElementById(\'upgradeCard\').scrollIntoView({behavior:\'smooth\'});return false" style="color:var(--amber)">See plans</a>' : ''}</div>`;
+  } finally { ANS_BUSY = false; }
 }
 
 // ---------------------------------------------------- action plan ---------
