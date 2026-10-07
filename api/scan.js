@@ -62,6 +62,12 @@ module.exports = async function handler(req, res) {
 
   const trigger = ['manual', 'onboarding'].includes(body.trigger) ? body.trigger : 'manual';
   const out = await runScan(db, biz, { trigger, plan });
+  if (trigger === 'onboarding' && out.ok) {
+    try {
+      const { data: u } = await db.auth.admin.getUserById(biz.owner_id);
+      await require('./_lib/notify').newSignup(u && u.user && u.user.email, biz.website_url);
+    } catch (e) {}
+  }
   if (!out.ok) return res.status(out.status).json({ error: out.error });
   return res.status(200).json({ ...out, plan, ok: undefined });
 };

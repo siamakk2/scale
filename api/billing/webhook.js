@@ -60,9 +60,14 @@ async function syncCustomer(s, db, customer, hint) {
     cancel_at_period_end: !!best.cancel_at_period_end,
     updated_at: new Date().toISOString(),
   };
+  const { data: prev } = await db.from('subscriptions').select('*').eq('owner_id', owner).maybeSingle();
   const { error } = await db.from('subscriptions').upsert(row, { onConflict: 'owner_id' });
   if (error) throw new Error(error.message);
   const live = ours.filter((x) => ['active', 'trialing', 'past_due'].includes(x.status));
+  try {
+    const { data: u } = await db.auth.admin.getUserById(owner);
+    await require('../_lib/notify').billingChange(prev, row, u && u.user && u.user.email, live.length);
+  } catch (e) { console.error(JSON.stringify({ source: 'notify', error: e.message })); }
   return { owner, plan: row.plan, status: row.status, sub: best.id, live_subs: live.length };
 }
 
