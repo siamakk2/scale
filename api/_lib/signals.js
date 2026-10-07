@@ -93,12 +93,76 @@ function images(html) {
   return { total: tags.length, missingAlt };
 }
 
+const decode = (s) => s == null ? s : String(s)
+  .replace(/&amp;/g, '&').replace(/&#39;|&#x27;|&apos;/g, "'").replace(/&quot;/g, '"')
+  .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+
+// Which site builder is this? Every instruction we give depends on it: "edit
+// your theme.liquid" is useless to a Wix owner.
+function platformOf(html) {
+  const gen = (metaContent(html, 'generator') || '').toLowerCase();
+  if (/cdn\.shopify\.com|Shopify\.theme|shopify-section/i.test(html)) return 'shopify';
+  if (gen.includes('wix') || /static\.wixstatic\.com|wix-warmup-data/i.test(html)) return 'wix';
+  if (gen.includes('squarespace') || /static1\.squarespace\.com|Static\.SQUARESPACE_CONTEXT/i.test(html)) return 'squarespace';
+  if (gen.includes('webflow') || /data-wf-site|webflow\.com\/css/i.test(html)) return 'webflow';
+  if (gen.includes('wordpress') || /\/wp-content\/|\/wp-includes\//i.test(html)) return 'wordpress';
+  if (/img\d?\.wsimg\.com|godaddy/i.test(html)) return 'godaddy';
+  return 'custom';
+}
+
+const SOCIAL = [
+  ['facebook', /facebook\.com\/(?!sharer|share|dialog|plugins|tr\b)[^"'?#\s]+/i],
+  ['instagram', /instagram\.com\/(?!p\/|explore)[^"'?#\s]+/i],
+  ['linkedin', /linkedin\.com\/(company|in)\/[^"'?#\s]+/i],
+  ['x', /(?:twitter|x)\.com\/(?!intent|share|home)[A-Za-z0-9_]{2,}/i],
+  ['youtube', /youtube\.com\/(?:@|channel\/|c\/|user\/)[^"'?#\s]+/i],
+  ['tiktok', /tiktok\.com\/@[^"'?#\s]+/i],
+  ['pinterest', /pinterest\.com\/(?!pin\/)[^"'?#\s]+/i],
+  ['yelp', /yelp\.com\/biz\/[^"'?#\s]+/i],
+  ['google', /(?:g\.page|maps\.app\.goo\.gl|google\.com\/maps)\/[^"'\s]+/i],
+];
+const PLATFORM_HANDLE = /\.com\/(?:@)?(wix\w*|mundowix|shopify\w*|squarespace|wordpress\w*|godaddy\w*|webflow|weebly|duda\w*|wixespanol)(?:[\/?#]|$)/i;
+// Profile links the page already shows people, so the fix can reuse them.
+function socialProfiles(html) {
+  const out = {};
+  const re = /<a\b[^>]*href\s*=\s*["']([^"']+)["']/gi; let m;
+  while ((m = re.exec(html))) {
+    // Site builders ship templates linked to their OWN accounts (Wix's
+    // facebook.com/WixEspanol, instagram.com/wix). Those are not the owner's.
+    if (PLATFORM_HANDLE.test(m[1])) continue;
+    for (const [k, rx] of SOCIAL) if (!out[k] && rx.test(m[1]) && /^https?:/i.test(m[1])) out[k] = m[1].split('#')[0].replace(/\/review\/?$/, '');
+  }
+  return out;
+}
+
+// Parse robots.txt and report which AI crawlers it shuts out of the whole site.
+const AI_BOTS = ['GPTBot', 'OAI-SearchBot', 'ChatGPT-User', 'ClaudeBot', 'Claude-SearchBot', 'PerplexityBot', 'Google-Extended', 'Bingbot'];
+function aiBlocked(robots) {
+  if (robots == null) return null;
+  const groups = []; let cur = null, lastWasAgent = false;
+  for (const raw of String(robots).split(/\r?\n/)) {
+    const line = raw.replace(/#.*/, '').trim(); if (!line) continue;
+    const [k, ...v] = line.split(':'); const key = k.trim().toLowerCase(), val = v.join(':').trim();
+    if (key === 'user-agent') {
+      if (!lastWasAgent) { cur = { agents: [], rules: [] }; groups.push(cur); }
+      cur.agents.push(val.toLowerCase()); lastWasAgent = true;
+    } else { lastWasAgent = false; if (cur && (key === 'disallow' || key === 'allow')) cur.rules.push([key, val]); }
+  }
+  const blocks = (g) => g.rules.some(([k, v]) => k === 'disallow' && v === '/') && !g.rules.some(([k, v]) => k === 'allow' && v === '/');
+  return AI_BOTS.filter((bot) => {
+    const own = groups.filter((g) => g.agents.includes(bot.toLowerCase()));
+    const use = own.length ? own : groups.filter((g) => g.agents.includes('*'));
+    return use.some(blocks);
+  });
+}
+
 /**
  * Extract every deterministic signal we score on.
  * @param {string} html  raw document
  * @param {string} host  hostname, for internal/external link classification
  */
-function extract(html, host) {
+function extract(html, host, extras) {
+  extras = extras || {};
   const ld = jsonLd(html);
   const types = ld
     .filter((n) => n && !n.__invalid)
@@ -107,7 +171,9 @@ function extract(html, host) {
     .filter(Boolean);
 
   const person = ld.find((n) => n && n['@type'] === 'Person') || null;
-  const org = ld.find((n) => n && /Organization|LocalBusiness|ProfessionalService/.test(String(n['@type']))) || null;
+  const orgs = ld.filter((n) => n && /Organization|LocalBusiness|ProfessionalService|Store|Restaurant|Service|Corporation|Clinic|Dentist|Attorney|Agent|Contractor|Physician|Hotel|Cafe|Bakery|Business/.test(String(n['@type']))) || null;
+  // Prefer the most specific type (TextileStore over Organization).
+  const org = orgs.find((n) => !/^(Organization|Corporation)$/.test(String([].concat(n['@type'])[0]))) || orgs[0] || null;
 
   const body = textOf(html);
   const title = (html.match(/<title[^>]*>([\s\S]*?)<\/title>/i) || [])[1];
@@ -115,7 +181,7 @@ function extract(html, host) {
 
   return {
     title: title ? textOf(title) : null,
-    metaDescription: metaContent(html, 'description'),
+    metaDescription: decode(metaContent(html, 'description')),
     canonical: (html.match(/<link[^>]+rel=["']canonical["'][^>]*>/i) || []).length
       ? attr(html.match(/<link[^>]+rel=["']canonical["'][^>]*>/i)[0], 'href')
       : null,
@@ -135,7 +201,8 @@ function extract(html, host) {
       // The entity declarations a model reads to answer "who is this".
       jobTitle: person ? person.jobTitle || null : null,
       knowsAbout: person && Array.isArray(person.knowsAbout) ? person.knowsAbout.length : 0,
-      sameAs: ((person && person.sameAs) || (org && org.sameAs) || []).length,
+      sameAs: Math.max(((person && person.sameAs) || []).length, ...orgs.map((o) => [].concat(o.sameAs || []).length), 0),
+      knowsAboutOrg: orgs.some((o) => o.knowsAbout),
       hasFaq: types.includes('FAQPage'),
       hasBreadcrumb: types.includes('BreadcrumbList'),
     },
@@ -149,7 +216,39 @@ function extract(html, host) {
     // that is exactly what a retrieval crawler sees.
     textToHtmlRatio: html.length ? +(body.length / html.length).toFixed(4) : 0,
     bodySample: body.slice(0, 6000),
+
+    // ---- rubric v2: the evidence the playbook quotes back to the owner ----
+    platform: platformOf(html),
+    siteName: decode((org && org.name) || metaContent(html, 'og:site_name') ||
+      (title ? textOf(title).split(/\s[|–—-]\s/)[0] : null) || host),
+    org: org ? {
+      type: [].concat(org['@type'])[0] || null,
+      description: org.description ? decode(org.description).slice(0, 400) : null,
+      telephone: org.telephone || null,
+      address: !!org.address, logo: !!org.logo,
+      city: org.address && org.address.addressLocality || null,
+      region: org.address && org.address.addressRegion || null,
+      street: org.address && org.address.streetAddress || null,
+      postal: org.address && org.address.postalCode || null,
+      logoUrl: typeof org.logo === 'string' ? org.logo : (org.logo && org.logo.url) || null,
+      email: org.email || null,
+    } : null,
+    h1Raw: (html.match(/<h1\b[^>]*>[\s\S]*?<\/h1>/gi) || []).slice(0, 4).map((x) => x.slice(0, 400)),
+    h1Logo: (html.match(/<h1\b[^>]*>[\s\S]*?<\/h1>/gi) || []).some((x) => /<img\b|logo/i.test(x)),
+    ogSiteName: metaContent(html, 'og:site_name'),
+    lang: (html.match(/<html[^>]*\blang=["']([^"']+)/i) || [])[1] || null,
+    viewport: !!metaContent(html, 'viewport'),
+    contact: {
+      tel: /href=["']tel:/i.test(html) || !!(org && org.telephone),
+      email: /href=["']mailto:/i.test(html) || !!(org && org.email),
+      phoneText: /\(?\b\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}\b/.test(body),
+    },
+    social: socialProfiles(html),
+    robotsTxt: extras.robots === undefined ? undefined : extras.robots,
+    aiBlocked: extras.robots === undefined ? null : aiBlocked(extras.robots),
+    sitemap: extras.sitemap === undefined ? null : !!extras.sitemap,
+    llmsTxt: extras.llms === undefined ? null : !!extras.llms,
   };
 }
 
-module.exports = { extract, textOf, jsonLd, headings };
+module.exports = { extract, textOf, jsonLd, headings, aiBlocked, platformOf, AI_BOTS };

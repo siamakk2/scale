@@ -65,6 +65,73 @@
   .more{margin-top:12px;border:1px dashed var(--line-bright);border-radius:11px;padding:14px 16px;
         font-size:14px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
   @media(max-width:760px){.plans{grid-template-columns:1fr}}
+  /* ---- guided plan ---- */
+  .gain{display:flex;gap:18px;flex-wrap:wrap;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+  .gain .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+  .gain .v{font-family:var(--display);font-size:20px;font-weight:700}
+  .gain .v.up{color:var(--good)}
+  .prog{height:8px;background:var(--surface-2);border-radius:100px;overflow:hidden;margin:4px 0 2px}
+  .prog i{display:block;height:100%;background:var(--warm);border-radius:100px;transition:width .6s}
+  .aisees{display:grid;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel)}
+  .aisees .row{display:grid;grid-template-columns:22px 150px 1fr;gap:12px;padding:11px 14px;border-top:1px solid var(--line);align-items:start;font-size:14px}
+  .aisees .row:first-child{border-top:none}
+  .aisees .k{color:var(--dim);font-size:12.5px;padding-top:1px}
+  .aisees .v{color:var(--text);overflow-wrap:anywhere}
+  .aisees .v small{display:block;color:var(--dim);font-size:12.5px;margin-top:2px}
+  .ok,.no,.meh{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700}
+  .ok{background:rgba(74,222,128,.15);color:var(--good)} .no{background:rgba(255,122,122,.15);color:var(--bad)}
+  .meh{background:rgba(255,180,84,.15);color:var(--amber)}
+  .phase{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin:22px 0 10px}
+  .phase:first-of-type{margin-top:6px}
+  .mis{border:1px solid var(--line);border-radius:13px;background:var(--panel);margin-bottom:10px;overflow:hidden}
+  .mis.open{border-color:var(--line-bright)}
+  .mis .hd{display:grid;grid-template-columns:auto 30px 1fr auto;gap:12px;align-items:center;padding:15px 16px;cursor:pointer}
+  .mis .num{width:28px;height:28px;border-radius:50%;border:1px solid var(--line-bright);display:grid;place-items:center;
+            font-family:var(--mono);font-size:12px;color:var(--dim)}
+  .mis .tt{font-weight:600;font-size:15px;line-height:1.35}
+  .mis .meta{font-size:12.5px;color:var(--dim);margin-top:3px}
+  .mis .pts{font-family:var(--mono);font-size:12.5px;font-weight:600;color:var(--good);white-space:nowrap;text-align:right}
+  .mis .pts small{display:block;color:var(--dim);font-weight:400;font-size:11px}
+  .mis.done .tt{text-decoration:line-through;opacity:.55} .mis.done .pts{opacity:.5}
+  .mis.done .num{background:var(--good);border-color:transparent;color:#05210f}
+  .mis .bd{display:none;padding:0 18px 18px 58px}
+  .mis.open .bd{display:block}
+  .mis h5{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:16px 0 7px}
+  .mis h5:first-child{margin-top:2px}
+  .mis .found li{color:var(--text);font-size:14px;margin:0 0 6px 18px;line-height:1.55}
+  .mis .why{font-size:14px;color:var(--muted);line-height:1.6}
+  .mis ol{margin:0 0 0 20px;padding:0} .mis ol li{font-size:14px;color:var(--text);line-height:1.6;margin-bottom:6px;padding-left:4px}
+  .paste{border:1px solid var(--line-bright);border-radius:10px;margin-top:10px;overflow:hidden}
+  .paste .ph{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 12px;background:var(--surface-2);font-size:12.5px;color:var(--muted)}
+  .paste pre{margin:0;padding:12px 14px;font-family:var(--mono);font-size:12.5px;line-height:1.55;color:#e8eef7;white-space:pre-wrap;word-break:break-word;max-height:300px;overflow:auto;background:#05070b}
+  .copy{font-family:var(--mono);font-size:11.5px;font-weight:600;background:var(--surface);color:var(--text);border:1px solid var(--line-bright);border-radius:7px;padding:5px 11px;cursor:pointer}
+  .copy.ok2{color:var(--good);border-color:rgba(74,222,128,.5)}
+  .mis .ft{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+  .mis .ft .btn{padding:10px 16px;font-size:12.5px;text-decoration:none}
+  .mis .warn2{font-size:13px;color:var(--amber);margin-top:6px}
+  .mis.lock .hd{cursor:default} .mis.lock .tt{color:var(--muted)}
+  .lockpill{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);border:1px solid rgba(255,180,84,.4);border-radius:100px;padding:3px 9px}
+  .tech{font-size:13px;color:var(--muted);background:rgba(45,212,255,.06);border:1px solid rgba(45,212,255,.25);border-radius:9px;padding:10px 12px;margin-bottom:6px}
+  .tech a{color:var(--cyan)}
+  .firstpill{display:inline-block;font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--bad);border:1px solid rgba(255,122,122,.5);border-radius:100px;padding:3px 9px;margin-bottom:6px}
+  .alert{border:1px solid rgba(255,122,122,.55);background:rgba(255,122,122,.09);border-radius:14px;padding:18px 20px;margin-bottom:18px}
+  .alert b{color:#ffb4b4;font-family:var(--display);font-size:18px;display:block;margin-bottom:4px}
+  .alert p{font-size:14.5px;color:var(--text);line-height:1.55}
+  #rescan:disabled{background:var(--surface);color:var(--dim);border:1px solid var(--line-bright);opacity:1;cursor:default}
+  .fixed{font-size:13.5px;color:var(--muted);margin-top:8px}
+  .fixed b{color:var(--good)}
+  .dfy{display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center}
+  .dfy .btns{display:flex;gap:10px;flex-wrap:wrap}
+  .dfy .btn{text-decoration:none}
+  @media(max-width:640px){
+    .aisees .row{grid-template-columns:22px 1fr} .aisees .row .v{grid-column:2}
+    .mis .hd{grid-template-columns:auto 1fr;gap:10px;align-items:start} .mis .num{display:none}
+    .mis .pts{grid-column:2;text-align:left} .mis .pts small{display:inline;margin-left:6px}
+    .mis.lock .lockpill{display:none}
+    .mis .bd{padding:0 16px 16px 16px}
+    .dfy{grid-template-columns:1fr}
+  }
+
 </style>
 </head>
 <body>
@@ -116,6 +183,7 @@
   <div class="wrap" style="padding-top:30px">
 
     <div id="notice"></div>
+    <div id="dAlert"></div>
     <div class="bar">
       <div>
         <div style="font-family:var(--display);font-size:20px;font-weight:600" id="dashName"></div>
@@ -141,6 +209,21 @@
         <div id="dDelta"></div>
       </div>
       <div class="stages" id="dStages"></div>
+      <div class="gain" id="dGain" style="display:none"></div>
+    </div>
+
+    <div class="card" id="aiCard" style="display:none">
+      <div class="sec-h">What AI can tell about you right now</div>
+      <p class="lead">This is what ChatGPT, Gemini, Claude and Google can read from your home page today. Every ✕ is something they have to guess, and guesses are how businesses get left out of answers.</p>
+      <div class="aisees" id="aiSees"></div>
+    </div>
+
+    <div class="card" id="planCard">
+      <div class="sec-h">Your action plan</div>
+      <p class="lead" id="planLead">Each mission shows what we found on your home page, why it matters, exactly where to click on your platform, and the text to paste, written for your business. Do them in order: the biggest wins come first. Most need a computer, because site editors don't work well on phones.</p>
+      <div id="planProg"></div>
+      <div id="dActions"></div>
+      <div id="dMore"></div>
     </div>
 
     <div class="card" id="trendCard" style="display:none">
@@ -157,16 +240,22 @@
       </div>
     </div>
 
-    <div class="card">
-      <div class="sec-h">Fix these first</div>
-      <p class="lead">Tick them off. What you dismiss will not be raised again.</p>
-      <div class="actions" id="dActions"></div>
-      <div id="dMore"></div>
+    <div class="card" id="dfyCard">
+      <div class="dfy">
+        <div>
+          <div class="sec-h">Rather have it done for you?</div>
+          <p class="lead" style="margin-bottom:0">Siamak Kalhor built this method from forty years of marketing work, and now does it for AI. In a 1-hour online session ($350) he works through your top missions with you on screen, or does them for you, starting with the technical ones. Bigger jobs get a fixed quote first.</p>
+        </div>
+        <div class="btns">
+          <a class="btn btn-pri" href="https://siamakconsulting.com/online-consulting#book" target="_blank" rel="noopener">Book a session · $350</a>
+          <a class="btn ghost" id="dfyMail" href="mailto:siamakk2@gmail.com">Ask for a fixed quote</a>
+        </div>
+      </div>
     </div>
 
     <div class="card" id="upgradeCard" style="display:none">
       <div class="sec-h">Keep the line moving</div>
-      <p class="lead" id="upgradeLead">Free includes one scan every 30 days and your top five fixes.</p>
+      <p class="lead" id="upgradeLead">Free includes one scan every 30 days and lessons for your top missions.</p>
       <div class="plans" id="plansGrid"></div>
       <p class="fine">Prices in USD. Paid plans are billed monthly and <b>renew automatically until you cancel</b>.
         Cancel any time in <i>Manage billing</i>; you keep the plan until the end of the period you paid for.
@@ -231,9 +320,9 @@ function notice(html, warn) {
   $('notice').innerHTML = html ? `<div class="notice ${warn ? 'warn' : ''}">${html}</div>` : '';
 }
 const FEATURES = {
-  free:   ['1 website', 'One scan every 30 days', 'Your top 5 fixes', 'Score history'],
-  growth: ['1 website', 'Rescan any time', 'The full ranked fix list', 'Automatic monthly scan'],
-  scale:  ['Up to 5 websites', 'Rescan any time', 'The full ranked fix list', 'Automatic monthly scans'],
+  free:   ['1 website', 'One scan every 30 days', 'Lessons for your top missions', 'Score history'],
+  growth: ['1 website', 'Rescan any time to see progress', 'Every mission, with step-by-step lessons', 'Automatic monthly scan'],
+  scale:  ['Up to 5 websites', 'Rescan any time to see progress', 'Every mission, with step-by-step lessons', 'Automatic monthly scans'],
 };
 async function loadMe() {
   const r = await api('/api/me');
@@ -372,12 +461,12 @@ $('rescan').addEventListener('click', () => runScan(false));
 // ----------------------------------------------------------- dashboard ----
 async function loadDash() {
   const { data: scans } = await sb.from('scans')
-    .select('id, overall_score, scores, findings, started_at, status')
+    .select('id, overall_score, scores, findings, started_at, status, profile:raw->profile')
     .eq('business_id', BIZ.id).eq('status','complete')
     .order('started_at', { ascending: false }).limit(12);
 
   const { data: acts } = await sb.from('actions')
-    .select('id, title, detail, impact, status')
+    .select('id, title, detail, impact, effort, status, completed_at')
     .eq('business_id', BIZ.id).order('impact', { ascending: false });
 
   $('dashName').textContent = BIZ.name;
@@ -388,18 +477,31 @@ async function loadDash() {
   if (!latest) { show('paneDash'); return; }
 
   $('dOverall').textContent = latest.overall_score ?? '—';
-  $('dVerdict').textContent = verdictFor(latest.overall_score ?? 0);
+  const hidden = (latest.scores && latest.scores.blocked === 'noindex') || (latest.profile && latest.profile.hidden);
+  $('dVerdict').textContent = hidden ? 'Hidden from Google until one switch is turned off.' : verdictFor(latest.overall_score ?? 0);
+  $('dAlert').innerHTML = hidden ? `<div class="alert"><b>Google is being told not to show your website.</b>
+    <p>Your home page carries a "do not list me" instruction, so Google, Bing and the AI assistants that use them leave you out, however good the rest is. Mission 1 below turns it off. It takes about 5 minutes at a computer. Your score is held at 20 until it's fixed.</p></div>` : '';
+  // Free plan: say when the next scan is, instead of a button that refuses.
+  const rb = $('rescan');
+  if (ME && ME.plan === 'free' && latest.scores && latest.scores.rubric) {
+    const next = new Date(new Date(latest.started_at).getTime() + 30 * 864e5);
+    if (next > new Date()) { rb.disabled = true; rb.textContent = 'Next free scan ' + next.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); }
+    else { rb.disabled = false; rb.textContent = 'Re-scan'; }
+  }
   $('dWhen').textContent = 'Scanned ' + new Date(latest.started_at).toLocaleDateString(
     undefined, { day:'numeric', month:'short', year:'numeric' });
 
   // Delta against the previous scan -- the thing a returning customer looks
   // for before anything else on this page.
-  const prev = scans[1];
+  const rub = (x) => (x && x.scores && x.scores.rubric) || 1;
+  const prev = scans.slice(1).find(x => rub(x) === rub(latest));
+  const upgraded = scans[1] && rub(scans[1]) !== rub(latest);
   if (prev && typeof prev.overall_score === 'number') {
     const d = latest.overall_score - prev.overall_score;
     const cls = d > 0 ? 'up' : d < 0 ? 'down' : 'flat';
     $('dDelta').innerHTML = `<span class="delta ${cls}">${d>0?'+':''}${d} since last scan</span>`;
-  } else $('dDelta').innerHTML = '';
+  } else $('dDelta').innerHTML = upgraded
+    ? '<span class="delta flat" title="We added new checks (AI crawler access, sitemap, title quality and more), so this score is a new baseline.">New, stricter scoring</span>' : '';
 
   const sc = latest.scores || {};
   $('dStages').innerHTML = STAGES.map(([l,w,dim]) =>
@@ -415,24 +517,10 @@ async function loadDash() {
   }).join('');
   $('dMomentum').style.display = typeof sc.momentum === 'number' ? 'none' : 'block';
 
-  drawTrend(scans.slice().reverse());
+  drawTrend(scans.filter(x => rub(x) === rub(latest)).reverse());
 
-  $('dActions').innerHTML = (acts && acts.length)
-    ? acts.map(a => `<div class="act ${a.status==='done'?'done':''}" data-id="${a.id}">
-        <input class="tick" type="checkbox" ${a.status==='done'?'checked':''} aria-label="Mark done">
-        <div class="sev ${a.impact>=4?'high':a.impact>=3?'medium':'low'}"></div>
-        <div><div class="t">${esc(a.title)}</div><div class="d">${esc(a.detail||'')}</div></div>
-        <div class="imp">${'●'.repeat(a.impact||1)}</div></div>`).join('')
-    : '<div class="empty">Nothing outstanding. Every check passed.</div>';
-
-  // Free shows the five heaviest fixes. Say how many more exist rather than
-  // pretending the list is complete.
-  const total = (latest.findings || []).length, shown = (acts || []).length;
-  $('dMore').innerHTML = ME && ME.plan === 'free' && total > shown
-    ? `<div class="more"><span><b>${total - shown} more fix${total - shown === 1 ? '' : 'es'}</b> found on this scan. The full ranked list is on Growth and Scale.</span>
-       <button class="btn btn-pri" onclick="document.getElementById('upgradeCard').scrollIntoView({behavior:'smooth'})">See plans</button></div>`
-    : '';
-
+  renderProfile(latest.profile);
+  renderPlan(latest, acts || [], prev);
   show('paneDash');
   resumeCheckout();
 }
@@ -446,6 +534,154 @@ async function resumeCheckout() {
   if (r.ok && r.out.url) { location.href = r.out.url; return; }
   notice(esc(r.out.error || 'Checkout could not start. Choose a plan below to try again.'), true);
 }
+
+
+// ------------------------------------------------- what AI can tell -------
+function renderProfile(p) {
+  if (!p) { $('aiCard').style.display = 'none'; return; }
+  $('aiCard').style.display = 'block';
+  const row = (state, k, v, sub) => `<div class="row"><span class="${state}">${state==='ok'?'✓':state==='no'?'✕':'!'}</span>
+    <div class="k">${k}</div><div class="v">${v}${sub?`<small>${sub}</small>`:''}</div></div>`;
+  const blocked = Array.isArray(p.aiBlocked) ? p.aiBlocked : null;
+  const titleOk = p.titleDescribes === undefined || p.titleDescribes === null
+    ? (p.title && p.name && p.title.trim().toLowerCase() !== String(p.name).trim().toLowerCase()) : p.titleDescribes;
+  $('aiSees').innerHTML = [
+    row(p.name ? 'ok' : 'no', 'Business name', p.name ? esc(p.name) : 'Not stated'),
+    row(p.what ? 'ok' : 'no', 'What you do', p.what ? esc(p.what) : 'Unclear: nothing on the page says it plainly',
+      p.what ? (p.industry ? 'We read you as: ' + esc(p.industry).toLowerCase() : '') : ''),
+    row(p.kind ? 'ok' : 'no', 'Type of business', p.kind ? esc(p.kind.replace(/([a-z])([A-Z])/g, '$1 $2')) : 'Not declared', p.kind ? 'Declared in your hidden business card' : 'AI has to work it out from your text'),
+    row(p.where ? 'ok' : p.platform === 'shopify' ? 'meh' : 'no', 'Location', p.where ? esc(p.where) : 'Not declared',
+      p.where ? '' : p.platform === 'shopify' ? 'Fine if you only sell online; add it if you have a showroom' : 'Needed for "near me" questions'),
+    row(titleOk ? 'ok' : 'meh', 'Google title', p.title ? '"' + esc(p.title) + '"' : 'None', titleOk ? '' : 'Names you, but does not say what you do'),
+    row(p.description ? (p.description.length > 165 || p.description.length < 50 ? 'meh' : 'ok') : 'no', 'Summary', p.description ? esc(p.description.length > 170 ? p.description.slice(0,170) + '…' : p.description) : 'None',
+      p.description && p.description.length > 165 ? `${p.description.length} characters, so it gets cut off` : p.description && p.description.length < 50 ? 'Too short to describe you' : ''),
+    row(p.phone ? 'ok' : 'no', 'Contact', p.phone ? 'Phone number found' : 'No phone or email found'),
+    row(p.profilesClaimed >= 3 ? 'ok' : p.profiles.length ? 'meh' : 'no', 'Your profiles',
+      p.profiles.length ? 'Linked on your page: ' + p.profiles.map(esc).join(', ') : 'None found',
+      p.profilesClaimed >= 3 ? `${p.profilesClaimed} confirmed in your business data` : 'Not confirmed in your business data, so AI cannot be sure they are yours'),
+    p.hidden ? row('no', 'Search & AI access', 'Hidden: your page tells search engines not to list it')
+    : row(blocked === null ? 'meh' : blocked.some(b => ['OAI-SearchBot','ChatGPT-User','Claude-SearchBot','PerplexityBot','Bingbot'].includes(b)) ? 'no' : blocked.length ? 'meh' : 'ok', 'AI access',
+      blocked === null ? 'Not checked on this scan' : blocked.length ? 'Blocked: ' + blocked.map(esc).join(', ') : 'ChatGPT, Claude, Perplexity and Google AI may read your site'),
+    row('ok', 'Built with', esc(p.platformName || 'Custom'), 'Your instructions are written for ' + esc(p.platformName || 'your site')),
+  ].join('');
+}
+
+// ---------------------------------------------------- action plan ---------
+let PLAN = []; const OPENSET = new Set(); let OPEN_INIT = false;
+function mailFor(title) {
+  const subj = 'Please do this for me: ' + title;
+  const body = 'Website: ' + (BIZ && BIZ.website_url) + '\nMission: ' + title + '\n\nI would like help with this.';
+  return 'mailto:siamakk2@gmail.com?subject=' + encodeURIComponent(subj) + '&body=' + encodeURIComponent(body);
+}
+function renderPlan(latest, acts, prev) {
+  const missions = (latest.findings || []).filter(m => m && m.title);
+  const guided = missions.some(m => m.guide);
+  const byTitle = Object.fromEntries(acts.map(a => [a.title, a]));
+  const inScan = new Set(missions.map(m => m.title));
+  PLAN = missions.map((m, i) => ({ m, a: byTitle[m.title] || null, i }));
+
+  // Old scans (before lessons existed) still list their fixes, plainly.
+  if (!guided) {
+    $('planLead').innerHTML = '<b>New:</b> your plan now comes with step-by-step instructions for your platform and text to paste. <b>Re-scan</b> to get it.';
+    $('planProg').innerHTML = '';
+    $('dActions').innerHTML = acts.length ? acts.map((a, i) => `<div class="mis ${a.status==='done'?'done':''}" data-id="${a.id}">
+      <div class="hd"><input class="tick" type="checkbox" ${a.status==='done'?'checked':''} aria-label="Mark done">
+      <span class="num">${i+1}</span><div><div class="tt">${esc(a.title)}</div><div class="meta">${esc(a.detail||'')}</div></div><span></span></div></div>`).join('')
+      : '<div class="empty">Nothing outstanding. Every check passed.</div>';
+    $('dMore').innerHTML = ''; $('dGain').style.display = 'none';
+    return;
+  }
+
+  const open = PLAN.filter(x => !x.m.locked);
+  const doneN = open.filter(x => x.a && x.a.status === 'done').length;
+  const pts = (arr) => arr.reduce((t, x) => t + (x.m.points || 0), 0);
+  const avail = pts(PLAN.filter(x => !(x.a && x.a.status === 'done')));
+  const mins = open.filter(x => !(x.a && x.a.status === 'done')).reduce((t, x) => t + ((x.m.guide && x.m.guide.minutes) || 10), 0);
+  const cur = latest.overall_score || 0;
+
+  $('dGain').style.display = 'flex';
+  $('dGain').innerHTML = `
+    <div><div class="k">Points available</div><div class="v up">+${avail}</div></div>
+    <div><div class="k">Score when done</div><div class="v">${Math.min(100, cur + avail)}</div></div>
+    <div><div class="k">Missions</div><div class="v">${doneN} of ${open.length} done</div></div>
+    <div><div class="k">Time needed</div><div class="v">${mins >= 60 ? (Math.round(mins/30)/2) + (mins < 75 ? ' hr' : ' hrs') : mins + ' min'}</div></div>`;
+
+  $('planProg').innerHTML = open.length ? `<div class="prog"><i style="width:${Math.round(doneN/open.length*100)}%"></i></div>
+    <div style="font-size:12.5px;color:var(--dim);margin-bottom:6px">${doneN ? `${doneN} done. Re-scan when you finish a few to see your score move.` : 'Start with mission 1. Most take under 15 minutes.'}</div>` : '';
+
+  const card = (x, n) => {
+    const m = x.m, g = m.guide, a = x.a, done = a && a.status === 'done';
+    if (m.locked) return `<div class="mis lock"><div class="hd"><span class="lockpill">Growth</span><span class="num">${n}</span>
+      <div><div class="tt">${esc(m.title)}</div><div class="meta">Step-by-step lesson included on Growth and Scale</div></div>
+      <div class="pts">+${m.points} pt${m.points === 1 ? '' : 's'}</div></div></div>`;
+    const stillThere = done && inScan.has(m.title) && a.completed_at && new Date(a.completed_at) < new Date(latest.started_at);
+    const pastes = (g && g.pastes || []).map((p, j) => `<div class="paste"><div class="ph"><span>${esc(p.label)}</span>
+      <button class="copy" data-copy="${n}-${j}">Copy</button></div><pre id="cp-${n}-${j}">${esc(p.code)}</pre></div>`).join('');
+    const isOpen = OPEN_INIT ? OPENSET.has(m.title) : (!done && n === firstOpen);
+    if (isOpen) OPENSET.add(m.title);
+    return `<div class="mis ${done?'done':''} ${isOpen?'open':''}" data-id="${a ? a.id : ''}" data-title="${esc(m.title)}">
+      <div class="hd" data-toggle>
+        ${a ? `<input class="tick" type="checkbox" ${done?'checked':''} aria-label="Mark done">` : '<span></span>'}
+        <span class="num">${done ? '✓' : n}</span>
+        <div>${m.blocker && !done ? '<div class="firstpill">Fix this first</div>' : ''}<div class="tt">${esc(m.title)}</div>
+          <div class="meta">${g ? `About ${g.minutes} min · ${esc(g.platformName)}${g.technical ? ' · technical' : ''}` : ''}${m.checks && m.checks.length > 1 ? ` · fixes ${m.checks.length} checks` : ''}</div></div>
+        <div class="pts">+${m.points} pt${m.points === 1 ? '' : 's'}<small>${done ? 'done' : m.blocker ? 'and unblocks the rest' : 'to gain'}</small></div>
+      </div>
+      ${g ? `<div class="bd">
+        ${g.technical ? '<div class="tech">This one involves pasting code. If you have never done that, have it done for you: Siamak can do it in a <a href="https://siamakconsulting.com/online-consulting#book" target="_blank" rel="noopener">1-hour session</a>.</div>' : ''}
+        ${stillThere ? '<div class="warn2">You marked this done, but the last scan still detects it. Re-scan after your changes are published.</div>' : ''}
+        <h5>What we found on your site</h5><ul class="found">${g.found.map(f => `<li>${esc(f)}</li>`).join('')}</ul>
+        <h5>Why it matters</h5><div class="why">${esc(g.why)}</div>
+        <h5>How to do it on ${esc(g.platformName)}</h5><ol>${g.steps.map(t => `<li>${esc(t)}</li>`).join('')}</ol>
+        ${pastes ? `<h5>Ready to paste</h5>${pastes}` : ''}
+        <div class="ft">
+          ${a ? `<button class="btn ${done?'ghost':'btn-pri'}" data-done>${done ? 'Mark as not done' : 'I did this ✓'}</button>` : ''}
+          <a class="btn ghost" href="${mailFor(m.title)}">Ask Siamak about this</a>
+        </div></div>` : ''}
+    </div>`;
+  };
+
+  const fo = PLAN.findIndex(x => !x.m.locked && !(x.a && x.a.status === 'done'));
+  const firstOpen = fo + 1;
+  const now = PLAN.slice(0, 3), next = PLAN.slice(3);
+  let html = '';
+  if (now.length) html += `<div class="phase">This week · start here</div>` + now.map((x, i) => card(x, i + 1)).join('');
+  if (next.length) html += `<div class="phase">Next · polish</div>` + next.map((x, i) => card(x, i + 4)).join('');
+  const fixed = acts.filter(a => a.status === 'done' && !inScan.has(a.title));
+  if (fixed.length) html += `<div class="fixed"><b>✓ Confirmed fixed by your last scan:</b> ${fixed.map(a => esc(a.title)).join(' · ')}</div>`;
+  OPEN_INIT = true;
+  $('dActions').innerHTML = html || '<div class="empty">Nothing outstanding. Every check passed. Re-scan monthly to keep it that way.</div>';
+
+  const locked = PLAN.filter(x => x.m.locked);
+  $('dMore').innerHTML = ME && ME.plan === 'free' && locked.length
+    ? `<div class="more"><span><b>${locked.length} more mission${locked.length === 1 ? '' : 's'}</b> worth <b>+${pts(locked)} points</b>, each with its own step-by-step lesson, are on Growth and Scale.</span>
+       <button class="btn btn-pri" onclick="document.getElementById('upgradeCard').scrollIntoView({behavior:'smooth'})">See plans</button></div>`
+    : '';
+  $('dfyMail').href = mailFor('Complete my S.C.A.L.E. plan');
+}
+
+$('dActions').addEventListener('click', async (e) => {
+  const cp = e.target.closest('.copy');
+  if (cp) {
+    const t = document.getElementById('cp-' + cp.dataset.copy).textContent;
+    try { await navigator.clipboard.writeText(t); } catch (err) {
+      const r = document.createRange(); r.selectNodeContents(document.getElementById('cp-' + cp.dataset.copy));
+      const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); document.execCommand('copy');
+    }
+    cp.textContent = 'Copied ✓'; cp.classList.add('ok2'); setTimeout(() => { cp.textContent = 'Copy'; cp.classList.remove('ok2'); }, 1800);
+    return;
+  }
+  const doneBtn = e.target.closest('[data-done]');
+  if (doneBtn) {
+    const row = doneBtn.closest('.mis'); const box = row.querySelector('.tick');
+    if (box) { box.checked = !box.checked; box.dispatchEvent(new Event('change', { bubbles: true })); }
+    return;
+  }
+  if (e.target.closest('.tick') || e.target.closest('a')) return;
+  const hd = e.target.closest('[data-toggle]');
+  if (hd) { const mis = hd.closest('.mis'); mis.classList.toggle('open');
+    OPENSET[mis.classList.contains('open') ? 'add' : 'delete'](mis.dataset.title); }
+});
 
 // Level over time -> a line. Only drawn with two or more points, because a
 // single dot is not a trajectory and drawing one implies it is.
@@ -476,12 +712,14 @@ function drawTrend(scans) {
 // not inventing rows, so this cannot be used to forge a cleaner list.
 $('dActions').addEventListener('change', async (e) => {
   const box = e.target.closest('.tick'); if (!box) return;
-  const row = box.closest('.act');
-  row.classList.toggle('done', box.checked);
+  const row = box.closest('.mis'); if (!row || !row.dataset.id) return;
+  box.disabled = true;
   await sb.from('actions').update({
     status: box.checked ? 'done' : 'open',
     completed_at: box.checked ? new Date().toISOString() : null
   }).eq('id', row.dataset.id);
+  box.disabled = false;
+  await loadDash();
 });
 
 // ----------------------------------------------------------------- boot ---

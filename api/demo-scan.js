@@ -12,9 +12,11 @@
 
 const { extract } = require('./_lib/signals');
 const { score } = require('./_lib/score');
+const { fetchExtras } = require('./_lib/runscan');
+const { buildMissions, aiProfile } = require('./_lib/playbook');
 
 const FETCH_TIMEOUT_MS = 12000;
-const MAX_HTML_BYTES = 400000;
+const MAX_HTML_BYTES = 3000000; // Shopify home pages often pass 1 MB; cutting them short hid their content
 
 function normalizeUrl(raw) {
   let url = String(raw || '').trim();
@@ -43,9 +45,9 @@ function normalizeUrl(raw) {
 }
 
 module.exports = async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== 'POST' && req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
-  let body = req.body;
+  let body = req.method === 'GET' ? { url: req.query && req.query.url } : req.body;
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { body = {}; } }
 
   const url = normalizeUrl(body && body.url);
@@ -56,6 +58,7 @@ module.exports = async function handler(req, res) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
   try {
+    const extrasP = fetchExtras(url);
     const resp = await fetch(url.toString(), {
       signal: ctrl.signal,
       redirect: 'follow',
@@ -64,14 +67,20 @@ module.exports = async function handler(req, res) {
     const html = (await resp.text()).slice(0, MAX_HTML_BYTES);
     if (!html) throw new Error('That site returned an empty page.');
 
-    const signals = extract(html, url.hostname);
+    const signals = extract(html, url.hostname, await extrasP);
     const result = score(signals, []);   // no history without an account
+    // The free scan teaches one lesson in full (the biggest), so people see
+    // what an account gives them. Previews show every lesson, for testing.
+    const all = buildMissions(result.findings, signals, { url: url.toString(), host: url.hostname });
+    const full = process.env.VERCEL_ENV !== 'production';
+    result.findings = all.map((f, i) => (full || i === 0 ? f : { ...f, guide: undefined }));
 
     return res.status(200).json({
       host: url.hostname,
       overall: result.overall,
       scores: result.scores,
       findings: result.findings,
+      profile: aiProfile(signals, { host: url.hostname }),
       checkedAt: result.checkedAt,
     });
   } catch (e) {
