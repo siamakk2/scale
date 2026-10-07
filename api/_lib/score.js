@@ -17,6 +17,8 @@
 // over history instead of invalidating it.
 
 const DIMENSIONS = ['visibility', 'clarity', 'structure', 'authority', 'momentum'];
+// Bump when checks are added or re-weighted. Scores are only compared within a version.
+const RUBRIC = 2;
 
 // pass: true | false | null   (null = not applicable, drops out of the denominator)
 const CHECKS = [
@@ -117,6 +119,49 @@ const CHECKS = [
     detail: 'Alt text is content; without it an image is a hole in the page to a crawler.',
     test: (s) => (s.images.total === 0 ? null : s.images.missingAlt / s.images.total <= 0.2) },
 
+  // ---- rubric v2 additions -------------------------------------------------
+  { id: 'ai-crawlers', dim: 'visibility', weight: 6,
+    title: 'AI assistants are allowed to read your site',
+    detail: 'If robots.txt blocks GPTBot, ClaudeBot or PerplexityBot, those assistants cannot read or recommend you.',
+    test: (s) => (Array.isArray(s.aiBlocked) ? s.aiBlocked.length === 0 : null) },
+
+  { id: 'sitemap', dim: 'visibility', weight: 3,
+    title: 'Publishes a sitemap',
+    detail: 'A sitemap is the list of pages you hand to crawlers so none of them get missed.',
+    test: (s) => s.sitemap },
+
+  { id: 'meta-description-length', dim: 'visibility', weight: 2,
+    title: 'Summary is a usable length',
+    detail: 'Past about 160 characters the summary is cut off mid-sentence wherever it is shown.',
+    test: (s) => (s.metaDescription && s.metaDescription.length >= 50 ? s.metaDescription.length <= 165 : null) },
+
+  { id: 'title-describes', dim: 'clarity', weight: 4,
+    title: 'Page title says what you do, not just your name',
+    detail: 'A title that is only a brand name tells a stranger, and an AI, nothing about what you sell.',
+    test: (s) => {
+      if (!s.title) return null;
+      const brand = String(s.siteName || '').toLowerCase();
+      const rest = s.title.toLowerCase().replace(brand, ' ')
+        .replace(/\b(home|homepage|welcome|official site|official website)\b/g, ' ')
+        .replace(/[|–—:\-]/g, ' ').split(/\s+/).filter((w) => w.length > 2);
+      return rest.length >= 2;
+    } },
+
+  { id: 'share-image', dim: 'clarity', weight: 2,
+    title: 'Has a share image',
+    detail: 'When your link is pasted into a chat, text or social post, this is the picture that shows.',
+    test: (s) => !!s.ogImage },
+
+  { id: 'llms-txt', dim: 'structure', weight: 1,
+    title: 'Has an llms.txt file',
+    detail: 'A short plain-text guide for AI systems: who you are and which pages matter. New, cheap, and rarely done.',
+    test: (s) => s.llmsTxt },
+
+  { id: 'contact-visible', dim: 'authority', weight: 3,
+    title: 'Shows how to reach you',
+    detail: 'A real phone number or email on the page is a trust signal for people and for AI systems alike.',
+    test: (s) => (s.contact ? !!(s.contact.tel || s.contact.email || s.contact.phoneText) : null) },
+
   // ----------------------------------------------------------- authority (L)
   { id: 'same-as', dim: 'authority', weight: 6,
     title: 'Links your profiles to your entity',
@@ -153,7 +198,7 @@ function scoreDimension(signals, dim) {
     possible += c.weight;
     if (pass) earned += c.weight;
     else findings.push({
-      id: c.id, dimension: dim, weight: c.weight,
+      id: c.id, dimension: dim, weight: c.weight, check: c.id,
       severity: c.weight >= 5 ? 'high' : c.weight >= 3 ? 'medium' : 'low',
       title: c.title, detail: c.detail,
     });
@@ -173,18 +218,23 @@ function scoreDimension(signals, dim) {
  */
 function score(signals, history = []) {
   const scores = {};
+  const POSSIBLE = {};
   let findings = [];
 
   for (const dim of DIMENSIONS) {
     if (dim === 'momentum') continue;
     const r = scoreDimension(signals, dim);
     scores[dim] = r.score;
+    POSSIBLE[dim] = r.possible;
     findings = findings.concat(r.findings);
   }
 
   // Momentum: direction and rate of change. Needs a prior scan by definition,
   // which is the honest reason the product asks you to come back.
-  const prior = history.find((h) => h && typeof h.overall_score === 'number');
+  // Only compare like with like: a scan scored under an older rubric measured
+  // different things, so its number is not a baseline for this one.
+  const prior = history.find((h) => h && typeof h.overall_score === 'number' &&
+    ((h.scores && h.scores.rubric) || 1) === RUBRIC);
   if (prior) {
     const current = baseOverall(scores);
     const delta = current - prior.overall_score;
@@ -194,7 +244,15 @@ function score(signals, history = []) {
     scores.momentum = null;
   }
 
-  findings.sort((a, b) => b.weight - a.weight);
+  // How many overall points each fix is worth: its share of its dimension,
+  // divided across the four dimensions that make up the headline number.
+  const measured = ['visibility', 'clarity', 'structure', 'authority'].filter((d) => typeof scores[d] === 'number');
+  for (const f of findings) {
+    const possible = POSSIBLE[f.dimension] || 1;
+    f.points = Math.max(1, Math.round((f.weight / possible) * 100 / (measured.length || 4)));
+  }
+  findings.sort((a, b) => b.points - a.points || b.weight - a.weight);
+  scores.rubric = RUBRIC;
 
   return {
     overall: baseOverall(scores),
@@ -223,10 +281,10 @@ function actionsFrom(findings, scanId) {
     stage: STAGE[f.dimension] || 'scan',
     title: f.title,
     detail: f.detail,
-    impact: Math.min(5, Math.max(1, Math.round(f.weight / 1.5))),
-    effort: f.weight >= 5 ? 3 : 2,
+    impact: Math.min(5, Math.max(1, Math.round((f.points || f.weight) / 3))),
+    effort: f.guide && f.guide.minutes ? Math.min(5, Math.max(1, Math.round(f.guide.minutes / 10))) : (f.weight >= 5 ? 3 : 2),
     status: 'open',
   }));
 }
 
-module.exports = { score, scoreDimension, actionsFrom, CHECKS, DIMENSIONS };
+module.exports = { score, scoreDimension, actionsFrom, CHECKS, DIMENSIONS, RUBRIC };

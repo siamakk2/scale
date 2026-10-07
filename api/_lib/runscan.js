@@ -12,6 +12,7 @@ const { createClient } = require('@supabase/supabase-js');
 const { extract } = require('./signals');
 const { score, actionsFrom } = require('./score');
 const { PLANS } = require('./plans');
+const { buildMissions, aiProfile } = require('./playbook');
 
 const FETCH_TIMEOUT_MS = 12000;
 const MAX_HTML_BYTES = 400000;
@@ -56,6 +57,32 @@ async function fetchPage(url) {
   } finally { clearTimeout(timer); }
 }
 
+// The three small files beside the page that decide what crawlers may read.
+// Each is best-effort: a timeout means "unknown" (null), never a failed check.
+async function fetchText(url, ms) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  try {
+    const r = await fetch(url, { signal: ctrl.signal, redirect: 'follow',
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; ScaleScan/1.0; +https://scale.siamakconsulting.com)' } });
+    const t = (await r.text()).slice(0, 60000);
+    return { status: r.status, text: t, html: /^\s*<(!doctype|html)/i.test(t) };
+  } catch (e) { return null; } finally { clearTimeout(timer); }
+}
+async function fetchExtras(url) {
+  const o = url.origin;
+  const [robots, sitemap, llms] = await Promise.all([
+    fetchText(o + '/robots.txt', 5000), fetchText(o + '/sitemap.xml', 5000), fetchText(o + '/llms.txt', 5000)]);
+  const out = {};
+  if (robots) out.robots = robots.status === 200 && !robots.html ? robots.text : '';
+  if (sitemap || (robots && /^\s*sitemap:/im.test(robots.text || ''))) {
+    out.sitemap = !!(sitemap && sitemap.status === 200 && /<(urlset|sitemapindex)/i.test(sitemap.text)) ||
+      !!(robots && robots.status === 200 && /^\s*sitemap:/im.test(robots.text));
+  }
+  if (llms) out.llms = llms.status === 200 && !llms.html && llms.text.trim().length > 20;
+  return out;
+}
+
 // Returns { ok:true, scan_id, overall, scores, findings, actions, actions_total }
 // or { ok:false, status, error }.
 async function runScan(db, biz, { trigger = 'manual', plan = 'free' } = {}) {
@@ -69,29 +96,40 @@ async function runScan(db, biz, { trigger = 'manual', plan = 'free' } = {}) {
   if (claimErr) return { ok: false, status: 409, error: 'A scan is already running for this website.' };
 
   try {
-    const page = await fetchPage(url);
+    const [page, extras] = await Promise.all([fetchPage(url), fetchExtras(url)]);
     if (!page.ok && !page.html) throw new Error('Site returned status ' + page.status);
-    const signals = extract(page.html, url.hostname);
+    const signals = extract(page.html, url.hostname, extras);
 
-    const { data: history } = await db.from('scans').select('overall_score, started_at')
+    const { data: history } = await db.from('scans').select('overall_score, scores, started_at')
       .eq('business_id', biz.id).eq('status', 'complete')
       .order('started_at', { ascending: false }).limit(6);
     const result = score(signals, history || []);
+    // Failed checks become missions (one card per job, with its lesson). The
+    // plan decides how many missions come with the full lesson; the rest show
+    // their title and the points they are worth, so nothing is hidden.
+    const cap0 = PLANS[plan] && PLANS[plan].fixes;
+    const missions = buildMissions(result.findings, signals, { url: url.toString(), host: url.hostname })
+      .map((m, i) => (cap0 && i >= cap0 ? { ...m, guide: null, locked: true } : m));
+    result.findings = missions;
+    const profile = aiProfile(signals);
 
     await db.from('scans').update({
       status: 'complete', overall_score: result.overall, scores: result.scores,
-      findings: result.findings, raw: { signals, http: { status: page.status }, url: url.toString() },
+      findings: result.findings, raw: { signals: { ...signals, robotsTxt: undefined }, profile, http: { status: page.status }, url: url.toString() },
       completed_at: new Date().toISOString(),
     }).eq('id', scan.id);
 
     // Replace the open list; leave done/dismissed items alone. Free accounts
     // get the heaviest fixes only -- the full list is part of a paid plan.
     await db.from('actions').delete().eq('business_id', biz.id).eq('status', 'open');
+    // A mission the owner already ticked stays ticked; the dashboard shows it
+    // as "still detected" if the scan disagrees, instead of re-adding a copy.
+    const { data: kept } = await db.from('actions').select('title').eq('business_id', biz.id).neq('status', 'open');
+    const keptTitles = new Set((kept || []).map((k) => k.title));
     const all = actionsFrom(result.findings, scan.id)
-      .map((a) => ({ ...a, business_id: biz.id }))
-      .sort((a, b) => b.impact - a.impact);
+      .map((a) => ({ ...a, business_id: biz.id }));
     const cap = PLANS[plan] && PLANS[plan].fixes;
-    const actions = cap ? all.slice(0, cap) : all;
+    const actions = (cap ? all.slice(0, cap) : all).filter((a) => !keptTitles.has(a.title));
     if (actions.length) await db.from('actions').insert(actions);
 
     await db.from('stage_progress').update({ status: 'complete', completed_at: new Date().toISOString() })
@@ -115,4 +153,4 @@ async function planOf(db, ownerId) {
   return require('./plans').effectivePlan(data);
 }
 
-module.exports = { admin, runScan, planOf, normalizeUrl };
+module.exports = { admin, runScan, planOf, normalizeUrl, fetchExtras };
