@@ -77,9 +77,12 @@ function suggestTitle(s) {
 // action that fits its industry. Never "Shop online" for a tree service.
 function suggestDescription(s) {
   const I = ind(s);
-  const src = ((s.org && s.org.description) || s.metaDescription || '').replace(/^welcome to\s+/i, '').replace(/\s+/g, ' ').trim();
-  const first = (src.match(/^[^.!?]+[.!?]/) || [''])[0].trim();
-  const usable = first.length >= 40 && first.length <= 125 && !isTagline(first) && !/^(with|whether|if|from)\b/i.test(first);
+  // Try each source's first sentence; keep the first one that reads like a description.
+  const firsts = [s.metaDescription, s.org && s.org.description].filter(Boolean)
+    .map((src) => (src.replace(/^welcome to\s+/i, '').replace(/\s+/g, ' ').trim().match(/^[^.!?]+[.!?]/) || [''])[0].trim());
+  const first = firsts.find((f) => f.length >= 40 && f.length <= 125 && !isTagline(f) &&
+    !/^(with|whether|if|from)\b/i.test(f) && !/shop now|buy now|click here|:\s*shop/i.test(f)) || '';
+  const usable = !!first;
   if (usable) {
     const out = capFirst(first.replace(/!$/, '.')) + ' ' + I.cta;
     return out.length <= 160 ? out : capFirst(first);

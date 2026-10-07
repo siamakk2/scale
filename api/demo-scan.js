@@ -16,7 +16,7 @@ const { fetchExtras } = require('./_lib/runscan');
 const { buildMissions, aiProfile } = require('./_lib/playbook');
 
 const FETCH_TIMEOUT_MS = 12000;
-const MAX_HTML_BYTES = 400000;
+const MAX_HTML_BYTES = 3000000; // Shopify home pages often pass 1 MB; cutting them short hid their content
 
 function normalizeUrl(raw) {
   let url = String(raw || '').trim();

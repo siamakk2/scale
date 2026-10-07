@@ -15,7 +15,7 @@ const { PLANS } = require('./plans');
 const { buildMissions, aiProfile } = require('./playbook');
 
 const FETCH_TIMEOUT_MS = 12000;
-const MAX_HTML_BYTES = 400000;
+const MAX_HTML_BYTES = 3000000; // Shopify home pages often pass 1 MB; cutting them short hid their content
 
 function admin() {
   return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY,
