@@ -9,110 +9,137 @@
 //
 // Deterministic like the rest of the engine: same page in, same lesson out.
 
+const BOT_LABEL = {
+  'GPTBot': 'OpenAI model training', 'OAI-SearchBot': 'ChatGPT search', 'ChatGPT-User': 'ChatGPT browsing for a user',
+  'ClaudeBot': 'Anthropic model training', 'Claude-SearchBot': 'Claude search', 'PerplexityBot': 'Perplexity answers',
+  'Google-Extended': 'Google Gemini training', 'Bingbot': 'Bing and Microsoft Copilot',
+};
+const SEARCH_BOTS = ['OAI-SearchBot', 'ChatGPT-User', 'Claude-SearchBot', 'PerplexityBot', 'Bingbot'];
+
 const NAMES = {
   shopify: 'Shopify', wix: 'Wix', squarespace: 'Squarespace', wordpress: 'WordPress',
   webflow: 'Webflow', godaddy: 'GoDaddy', custom: 'your website',
 };
 
 // ------------------------------------------------------------- helpers ----
+const { classify, list } = require('./industry');
+
 const clip = (s, n) => {
   s = String(s || '').trim();
   if (s.length <= n) return s;
   const cut = s.slice(0, n + 1);
   const at = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf(', '), cut.lastIndexOf(' '));
-  return cut.slice(0, at > n * 0.6 ? at : n).replace(/[,.;:\s]+$/, '') + (at > n * 0.6 && cut[at] === '.' ? '.' : '');
+  return cut.slice(0, at > n * 0.6 ? at : n).replace(/[,.;:\s]+$/, '');
 };
 const FILLER = /^(welcome to [^,.!]+[,.!]?\s*|your one[- ]stop shop for\s*|we are\s+|we're\s+|the best\s+|home\s*[|–—-]\s*)/i;
-
-// Best guess at "what this business does", in its own words.
-function whatYouDo(s) {
-  const brand = String(s.siteName || '').toLowerCase();
-  const cands = []
-    .concat(s.headings.h1, s.headings.h2.slice(0, 3))
-    .map((t) => String(t || '').replace(FILLER, '').replace(/\s+/g, ' ').trim())
-    .filter((t) => t && t.toLowerCase() !== brand && t.split(/\s+/).length >= 3 && t.split(/\s+/).length <= 12 &&
-      !/^(featured|shop|new|best sellers?|sign up|subscribe|contact|about|menu|cart|search|follow)/i.test(t));
-  if (cands.length) return cands[0].replace(/[.!]+$/, '');
-  const d = (s.org && s.org.description) || s.metaDescription;
-  if (d) return clip(d.replace(FILLER, '').split(/(?<=[.!?])\s/)[0], 60).replace(/[.!]+$/, '');
-  return null;
-}
+const capFirst = (t) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : t);
 const place = (s) => (s.org && s.org.city ? s.org.city + (s.org.region ? ', ' + s.org.region : '') : null);
+const ind = (s) => s.__ind || (s.__ind = classify(s));
+
+// A tagline ("Compassionate. Experienced. Local.") is not a description.
+const isTagline = (t) => (t.match(/[.!]/g) || []).length >= 2 || /^[A-Z][a-z]+[.!]\s/.test(t);
+
+// "What this business does", in plain words: its services and its town when
+// we can find them, otherwise its own most descriptive heading.
+function whatYouDo(s) {
+  const I = ind(s);
+  const brand = String(s.siteName || '').toLowerCase();
+  // The business's own best line beats our category list, when it names what they offer.
+  const own = [].concat(s.headings.h1, s.headings.h2.slice(0, 4))
+    .map((t) => String(t || '').replace(FILLER, '').replace(/\s+/g, ' ').trim())
+    .find((t) => t && t.toLowerCase() !== brand && !isTagline(t) && t.split(/\s+/).length >= 3 && t.split(/\s+/).length <= 9 &&
+      (I.terms || []).some((term) => t.toLowerCase().includes(term)));
+  if (own) return capFirst(own.replace(/[.!]+$/, ''));
+  if (I.services.length) return capFirst(list(I.services.slice(0, 3))) + (place(s) ? ' in ' + place(s) : '');
+  const cands = [].concat(s.headings.h1, s.headings.h2.slice(0, 3))
+    .map((t) => String(t || '').replace(FILLER, '').replace(/\s+/g, ' ').trim())
+    .filter((t) => t && t.toLowerCase() !== brand && !isTagline(t) && t.split(/\s+/).length >= 3 && t.split(/\s+/).length <= 12 &&
+      !/^(featured|shop|new|best sellers?|sign up|subscribe|contact|about|menu|cart|search|follow|our )/i.test(t));
+  return cands.length ? capFirst(cands[0].replace(/[.!]+$/, '')) : null;
+}
 
 function suggestTitle(s) {
-  const what = whatYouDo(s);
   const brand = s.siteName || 'Your Business';
-  if (!what) return `${brand} | [What you sell] in [City]`;
-  const loc = place(s);
-  let t = `${what}${loc && !what.includes(s.org.city) ? ' in ' + loc : ''} | ${brand}`;
+  const what = whatYouDo(s);
+  if (!what) return `${brand} | [What you do] in [City]`;
+  let t = `${what} | ${brand}`;
+  const I = ind(s);
+  // Too long? Drop services one at a time rather than cutting a word in half.
+  for (let n = 2; t.length > 62 && n >= 1 && I.services.length > n; n--) {
+    t = `${capFirst(list(I.services.slice(0, n)))}${place(s) ? ' in ' + place(s) : ''} | ${brand}`;
+  }
+  if (t.length > 62 && place(s)) t = t.replace(' in ' + place(s), ' in ' + s.org.city);
   if (t.length > 62) t = `${clip(what, 60 - brand.length - 3)} | ${brand}`;
   return t;
 }
 
-const TAIL = /[\s,;:–—-]+(and|or|the|of|for|with|to|a|an|in|on|our|your)?[\s,;:–—-]*$/i;
-function capFirst(t) { return t ? t.charAt(0).toUpperCase() + t.slice(1) : t; }
+// One honest sentence from the business's own description, then the call to
+// action that fits its industry. Never "Shop online" for a tree service.
 function suggestDescription(s) {
+  const I = ind(s);
   const src = ((s.org && s.org.description) || s.metaDescription || '').replace(/^welcome to\s+/i, '').replace(/\s+/g, ' ').trim();
-  if (src.length >= 70) {
-    const sents = src.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [src];
-    let out = '';
-    for (const x of sents) { if ((out + x).trim().length <= 158) out = (out + x); else break; }
-    out = out.trim();
-    if (out.length < 90 && sents.length > out.split(/[.!?]/).length - 1) {
-      const next = sents[(out.match(/[.!?]/g) || []).length] || '';
-      const room = 155 - out.length - 1;
-      if (room > 40 && next) out = (out + ' ' + clip(next.trim(), room).replace(TAIL, '') + '.').trim();
-    }
-    if (!out) out = clip(src, 155).replace(TAIL, '') + '.';
-    return capFirst(out.replace(/\.\.$/, '.'));
+  const first = (src.match(/^[^.!?]+[.!?]/) || [''])[0].trim();
+  const usable = first.length >= 40 && first.length <= 125 && !isTagline(first) && !/^(with|whether|if|from)\b/i.test(first);
+  if (usable) {
+    const out = capFirst(first.replace(/!$/, '.')) + ' ' + I.cta;
+    return out.length <= 160 ? out : capFirst(first);
   }
-  const what = whatYouDo(s) || '[what you sell or do]';
-  return clip(`${s.siteName || 'We'} offers ${what.charAt(0).toLowerCase() + what.slice(1)}` +
-    `${place(s) ? ' in ' + place(s) : ''}. [One line on why customers choose you]. [Call to action, e.g. Shop online or Call for a quote].`, 160);
+  const what = whatYouDo(s);
+  if (what) {
+    const svc = I.services.length ? list(I.services.slice(0, 3)) : what.charAt(0).toLowerCase() + what.slice(1);
+    return clip(`${s.siteName || 'We'} ${I.verb} ${svc}${I.key === 'legal' ? ' cases' : ''}${place(s) && I.services.length ? ' in ' + place(s) : ''}. ${I.cta}`, 160);
+  }
+  return `${s.siteName || 'We'} [does what] for [whom] in [city]. ${I.cta}`;
 }
 
 function originOf(ctx) { try { return new URL(ctx.url).origin; } catch (e) { return 'https://' + (ctx.host || 'yourwebsite.com'); } }
 
+function topics(s) {
+  const I = ind(s);
+  const t = I.services.map(capFirst);
+  while (t.length < 3) t.push(t.length ? '[Another service you are known for]' : '[Your main service]');
+  return t.slice(0, 5);
+}
+
 function orgJson(s, ctx, { forWix } = {}) {
-  const local = !!(s.contact && (s.contact.tel || s.contact.phoneText)) || !!(s.org && s.org.address);
+  const I = ind(s);
   const sameAs = Object.values(s.social || {});
   const node = {
     '@context': 'https://schema.org',
-    '@type': (s.org && s.org.type && s.org.type !== 'Organization') ? s.org.type : (local ? 'LocalBusiness' : 'Organization'),
+    '@type': (s.org && s.org.type && !/^(Organization|LocalBusiness)$/.test(s.org.type)) ? s.org.type : (I.schema || 'LocalBusiness'),
     name: s.siteName || '[Business name]',
     url: originOf(ctx) + '/',
     description: suggestDescription(s),
   };
-  if (s.org && s.org.logoUrl) node.logo = s.org.logoUrl; else node.logo = originOf(ctx) + '/[path-to-your-logo].png';
-  node.telephone = (s.org && s.org.telephone) || '[+1-555-555-5555]';
+  node.logo = (s.org && s.org.logoUrl) || originOf(ctx) + '/[your-logo-file].png';
+  node.telephone = (s.org && s.org.telephone) || '[Your phone number]';
   if (s.org && s.org.email) node.email = s.org.email;
   node.address = {
     '@type': 'PostalAddress',
     streetAddress: (s.org && s.org.street) || '[Street address]',
     addressLocality: (s.org && s.org.city) || '[City]',
     addressRegion: (s.org && s.org.region) || '[State]',
-    postalCode: (s.org && s.org.postal) || '[ZIP]',
+    postalCode: (s.org && s.org.postal) || '[ZIP code]',
     addressCountry: 'US',
   };
-  const what = whatYouDo(s);
-  node.knowsAbout = what ? [what, '[Second topic you are known for]', '[Third topic]'] : ['[Topic 1]', '[Topic 2]', '[Topic 3]'];
-  node.sameAs = sameAs.length ? sameAs.concat(sameAs.length < 3 ? ['[Your Google Business Profile link]'] : [])
-    : ['[Your Facebook page]', '[Your Instagram or LinkedIn]', '[Your Google Business Profile link]'];
+  node.knowsAbout = topics(s);
+  node.sameAs = sameAs.length ? sameAs.concat(sameAs.length < 3 && !(s.social || {}).google ? ['[Your Google Business Profile link]'] : [])
+    : ['[Your Google Business Profile link]', '[Your Facebook page]', '[Your Yelp or LinkedIn page]'];
   const json = JSON.stringify(node, null, 2);
   return forWix ? json : `<script type="application/ld+json">\n${json}\n</script>`;
 }
 
+function faqPairs(s) {
+  const I = ind(s);
+  const n = s.siteName || 'your business';
+  const where = place(s);
+  return I.faq(n, suggestDescription(s), where).map(([q, a]) => [q,
+    a || (where ? `We are based in ${where}. [Add the cities or areas you serve.]` : '[Your city and the areas you serve.]')]);
+}
 function faqJson(s, forWix) {
-  const name = s.siteName || 'we';
-  const what = whatYouDo(s);
-  const qa = [
-    [`What does ${name} do?`, suggestDescription(s)],
-    [`Where is ${name} located, and what areas do you serve?`, place(s) ? `We are based in ${place(s)}. [Add the areas you serve or say if you ship nationwide.]` : '[Your city, and the areas you serve or ship to.]'],
-    [`How do I ${what && /shop|store|fabric|product|buy|sell/i.test(what + s.platform) ? 'place an order' : 'get started or get a quote'}?`, '[Explain the first step in one or two sentences, with your phone number or a link.]'],
-  ];
   const node = {
     '@context': 'https://schema.org', '@type': 'FAQPage',
-    mainEntity: qa.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
+    mainEntity: faqPairs(s).map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
   };
   const json = JSON.stringify(node, null, 2);
   return forWix ? json : `<script type="application/ld+json">\n${json}\n</script>`;
@@ -185,7 +212,9 @@ const H1 = {
   shopify: (s) => s.h1Logo
     ? ['Your theme wraps the logo in a main heading, so the main heading says your name instead of what you sell.',
        'Online Store → Themes → ⋯ → Edit code → sections/header.liquid. Search for "<h1" around the logo and change h1 to div on both the opening and closing tags. Save.',
-       'Then in Customize, make your first banner headline the one sentence below. Not comfortable editing code? Tap "Have Siamak do it".']
+       (() => { const other = (s.headings.h1 || []).find((h) => h && h.toLowerCase() !== String(s.siteName || '').toLowerCase());
+         return other ? `Your banner headline "${other}" is good. Once the logo stops being a heading, it becomes your one main heading. Not comfortable editing code? This is a good one to have done for you.`
+           : 'Then in Customize, make your first banner headline the sentence below. Not comfortable editing code? This is a good one to have done for you.'; })()]
     : ['Online Store → Themes → Customize. Click the main banner or text section at the top.', 'Use the sentence below as its heading, and make other section headings smaller.'],
   wix: () => ['In the Editor click your main headline → Edit Text.', 'Set the style to "Heading 1". Make every other heading Heading 2 or smaller.', 'Publish.'],
   squarespace: () => ['Edit the top text block and select the headline.', 'Choose "Heading 1" from the format menu; change any other Heading 1 on the page to Heading 2.', 'Save.'],
@@ -216,11 +245,11 @@ const NOINDEX = {
 };
 
 const LLMS_HOST = {
-  shopify: ['Shopify publishes an llms.txt for some stores automatically; yours is missing, so this is optional.', 'Easiest: ask us to add it as a page redirect, or skip this one. It is worth only 1 point.'],
+  shopify: ['Shopify does not let you upload your own file to the root of your store, so this needs a developer or an app. It is worth only 1 point: skip it for now unless the rest is done.'],
   wix: ['Wix does not let you upload files to your site root yet, so skip this one for now. It is worth only 1 point.'],
   squarespace: ['Squarespace does not let you upload files to your site root, so skip this one for now. It is worth only 1 point.'],
   wordpress: ['Install the free "Website LLMs.txt" plugin, or upload the file below as llms.txt to your site root using your host\'s File Manager.'],
-  webflow: ['Webflow cannot host root files directly; skip for now (1 point) or ask us to set up a redirect.'],
+  webflow: ['Webflow cannot host your own root files directly; skip this one for now (1 point).'],
   godaddy: ['Not supported on Website Builder; skip this one. It is worth only 1 point.'],
   custom: ['Save the text below as llms.txt at the root of your site, so it opens at /llms.txt.'],
 };
@@ -236,8 +265,8 @@ function llmsTxt(s, ctx) {
 // Each returns { found, why, steps, paste, minutes }.
 const G = {
   'indexable': (s, p) => ({
-    found: `Your home page tells search engines not to list it (robots: "${s.robots}").`,
-    why: 'This one switch hides you from Google, Bing and the AI assistants that read them. Nothing else on this list matters until it is off.',
+    found: `Your home page carries a hidden "do not list me" instruction for search engines (it says "${s.robots}"). Google and Bing obey it.`,
+    why: 'While this switch is on, your site is invisible in Google, Bing and the AI assistants that read them, no matter how good it is. This usually happens when a site is built with the switch on and nobody turns it off at launch.',
     steps: NOINDEX[p], minutes: 5 }),
 
   'title-present': (s, p) => ({
@@ -256,7 +285,7 @@ const G = {
     steps: TITLE_EDIT[p], paste: { label: 'Suggested title (edit freely)', code: suggestTitle(s) }, minutes: 5 }),
 
   'meta-description': (s, p) => ({
-    found: s.metaDescription ? `Your summary is only ${s.metaDescription.length} characters: "${s.metaDescription}".` : 'Your home page has no meta description (the summary under your name in search results).',
+    found: s.metaDescription ? `Your summary (the two lines under your name in Google) is only ${s.metaDescription.length} characters: "${s.metaDescription}".` : 'Your home page has no summary (the two lines under your name in Google, called the "meta description").',
     why: 'Without one, Google and AI tools grab random text from your page, often a menu or a cookie notice, as the description of your business.',
     steps: TITLE_EDIT[p], paste: { label: 'Suggested description', code: suggestDescription(s) }, minutes: 5 }),
 
@@ -266,19 +295,19 @@ const G = {
     steps: TITLE_EDIT[p], paste: { label: `Tighter version (${suggestDescription(s).length} characters)`, code: suggestDescription(s) }, minutes: 5 }),
 
   'canonical': (s, p) => ({
-    found: 'Your home page does not declare its one official address.',
-    why: 'Your site is reachable at several addresses (with and without www, with tracking codes). Without a canonical tag, credit for the page is split between them.',
+    found: 'Your home page does not state its one official web address.',
+    why: 'Your site opens at several addresses (with and without "www", with tracking codes added). Without this tag, Google splits the credit for your page between them.',
     steps: ['shopify', 'wix', 'squarespace', 'wordpress'].includes(p)
-      ? [`${NAMES[p]} normally adds this automatically, so your theme or an app has removed it.`, 'Easiest fix: tap "Have Siamak do it" and we will restore it.']
+      ? [`${NAMES[p]} normally adds this automatically, so your theme or an app has removed it.`, 'Easiest fix: have it done for you (it is a two-minute job for a developer).']
       : HEAD[p],
     paste: { label: 'Code', code: `<link rel="canonical" href="${originOf({ url: s.__url })}/">` }, minutes: 10 }),
 
   'content-in-html': (s, p) => ({
-    found: `We could read only ${s.wordCount} words of text on your home page. AI tools need around 300 to understand a business.`,
+    found: `We could read only ${s.wordCount} words of plain text on your home page. A few hundred words is a sensible minimum for describing a business.`,
     why: 'AI assistants recommend businesses they can describe. A page that is mostly pictures, sliders and buttons gives them nothing to quote.',
     steps: ['Add a section of real text to your home page using the outline below.', 'Write the way you would explain your business to a new customer on the phone.',
       `On ${NAMES[p]}, add a Text section/block and paste the outline in, then replace the brackets.`],
-    paste: { label: 'Outline to fill in', code: `About ${s.siteName || 'us'}\n${suggestDescription(s)}\n\nWhat we offer\n[3–5 sentences on your main products or services]\n\nWho we work with\n[The customers you serve best]\n\nWhy choose ${s.siteName || 'us'}\n[Years in business, guarantees, what makes you different]\n\nWhere we are\n[City, service area, or "we ship nationwide"]` },
+    paste: { label: 'Outline to fill in', code: `About ${s.siteName || 'us'}\n${suggestDescription(s)}\n\nWhat we offer\n${ind(s).services.length ? capFirst(list(ind(s).services)) + ': [a sentence on each]' : '[3–5 sentences on your main products or services]'}\n\nWho we work with\n[The customers you serve best]\n\nWhy choose ${s.siteName || 'us'}\n[Years in business, guarantees, what makes you different]\n\nWhere we work\n[${ind(s).key === 'retail' ? 'Where you ship, and your showroom if you have one' : 'Your city and the areas you serve'}]` },
     minutes: 30 }),
 
   'content-density': (s, p) => ({
@@ -289,9 +318,10 @@ const G = {
     minutes: 30 }),
 
   'single-h1': (s, p) => ({
-    found: s.h1Count === 0 ? 'Your home page has no main heading (H1).'
+    found: s.h1Count === 0 ? 'Your home page has no main heading (the big headline search engines treat as the page\'s topic, called the "H1").'
       : `Your home page has ${s.h1Count} main headings: ${s.headings.h1.slice(0, 3).map((h) => `"${clip(h, 60)}"`).join(', ')}.`,
-    why: 'The main heading is how search engines and AI decide what a page is about. Two of them split that signal; none leaves it blank.',
+    why: s.h1Count === 0 ? 'Search engines and AI read the main heading to decide what a page is about. Without one, they have to guess.'
+      : 'Search engines and AI read the main heading to decide what a page is about. With two, they are told two different things, and one of them is just your logo.',
     steps: (H1[p] || H1.custom)(s), paste: { label: 'Use this as your one main heading', code: whatYouDo(s) || `[What you do] in [City]` }, minutes: 15 }),
 
   'h1-substantive': (s, p) => ({
@@ -305,36 +335,42 @@ const G = {
     steps: [`Add section headings (Heading 2) to your home page on ${NAMES[p]}, one per topic.`, 'Use the headings below as a starting point, each followed by a short paragraph.'],
     paste: { label: 'Section headings to add', code: `What we do\nWho we help\nWhy customers choose ${s.siteName || 'us'}\nWhere we work\nQuestions customers ask` }, minutes: 20 }),
 
-  'stated-role': (s, p) => schemaGuide(s, p, 'Nothing on your site tells AI systems, in their own language, what kind of business you are.'),
-  'schema-present': (s, p) => schemaGuide(s, p, 'Your home page has no structured data (the code AI systems read to identify a business).'),
-  'entity-declared': (s, p) => schemaGuide(s, p, `Your structured data describes ${s.schema.types.slice(0, 3).join(', ') || 'the page'}, but never the business itself.`),
+  'stated-role': (s, p) => schemaGuide(s, p, `Your site never tells AI, in its own code language, what kind of business you are. We read you as a ${ind(s).label.toLowerCase()}.`),
+  'schema-present': (s, p) => schemaGuide(s, p, 'Your home page has no hidden business card for AI (code called "structured data" that states your name, type, location and phone).'),
+  'entity-declared': (s, p) => schemaGuide(s, p, s.schema.blocks ? 'Your page has some hidden code for search engines, but none of it describes your business itself.' : 'Your page has no hidden code describing your business.'),
   'schema-valid': (s, p) => ({
-    found: `${s.schema.invalid} of your ${s.schema.blocks} structured-data blocks are broken and get ignored.`,
+    found: `${s.schema.invalid} of the ${s.schema.blocks} hidden business-info blocks on your page ("structured data") are broken, so AI tools ignore them.`,
     why: 'A broken block is worse than none: you think it is working, and every crawler silently throws it away.',
     steps: ['Paste your home page address into validator.schema.org to see the exact error.', 'Usually it is a missing comma or quote in code an app or developer added. Remove or fix that block.',
       'Then use the clean block below in its place.'].concat(p === 'wix' ? SCHEMA_WIX : HEAD[p]),
     paste: { label: 'Clean replacement', code: orgJson(s, { url: s.__url }, { forWix: p === 'wix' }) }, minutes: 20 }),
 
-  'knows-about': (s, p) => schemaGuide(s, p, 'Your business data does not list the topics you are expert in.',
-    'knowsAbout is how an AI connects you with a subject ("stretch fabric", "commercial leasing") rather than only with your name.'),
+  'knows-about': (s, p) => schemaGuide(s, p, 'Your hidden business card for AI does not list your specialties.',
+    'Listing your specialties in this hidden business card is how AI connects you with what you do, not only with your name.'),
 
   'same-as': (s, p) => schemaGuide(s, p,
     Object.keys(s.social || {}).length
-      ? `Your page links to ${Object.keys(s.social).join(', ')}, but your business data does not claim those profiles as yours.`
-      : 'Your business data does not link to any of your profiles (Google, Facebook, LinkedIn, Yelp…).',
-    'AI systems trust a business more when they can confirm it is the same one listed on Google, Yelp and social media. "sameAs" is that confirmation.'),
+      ? `Your page links to your ${Object.keys(s.social).join(', ')} page${Object.keys(s.social).length > 1 ? 's' : ''}, but your hidden business card for AI doesn't claim ${Object.keys(s.social).length > 1 ? 'them' : 'it'} as yours.`
+      : 'Your hidden business card for AI does not link to any of your profiles (Google, Facebook, Yelp, LinkedIn…).',
+    'AI trusts a business more when it can confirm the website, the Google listing and the social pages all belong to the same company. This is that confirmation.'),
 
-  'faq-schema': (s, p) => ({
-    found: 'Your home page has no question-and-answer section.',
-    why: 'People ask AI questions. Pages that already contain the question and a clear answer are the ones that get quoted.',
-    steps: ['Add an FAQ section to your home page with the three questions below, written for your customers.',
-      p === 'wix' ? 'Wix: add an FAQ element (Add → Interactive → FAQ) or a text section.' : `${NAMES[p]}: add a text or FAQ/accordion section.`,
-      'Then add the code below so AI tools read it as Q&A:'].concat(p === 'wix' ? SCHEMA_WIX : HEAD[p]),
-    paste: { label: 'FAQ code (edit the answers to match what your page says)', code: faqJson(s, p === 'wix') }, minutes: 25 }),
+  'faq-schema': (s, p) => {
+    const I = ind(s);
+    const pairs = faqPairs(s);
+    return {
+      found: 'Your home page has no questions-and-answers section.',
+      why: 'People ask AI assistants questions in plain words. A page that already contains the question and a clear answer is the easiest thing for them to quote. (Google no longer shows FAQ drop-downs in results for most sites, but AI assistants still read them.)',
+      steps: ['Step 1: add a "Questions" section near the bottom of your home page with the three questions below. Edit the answers so they are true for you.' + (I.note ? ' ' + I.note : ''),
+        p === 'wix' ? 'On Wix: Add (+) → Interactive → FAQ, or a simple text section.' : `On ${NAMES[p]}: add a text or FAQ/accordion section.`,
+        'Step 2 (optional, a little technical): add the code version so AI tools recognise it as Q&A. Use the same wording as on the page.'].concat(p === 'wix' ? SCHEMA_WIX : HEAD[p]),
+      paste: [{ label: 'Questions and answers to put on your page', code: pairs.map(([q, a]) => `${q}\n${a}`).join('\n\n') },
+        { label: 'Code version (optional, same wording)', code: faqJson(s, p === 'wix') }],
+      minutes: 25 };
+  },
 
   'image-alt': (s, p) => ({
     found: `${s.images.missingAlt} of ${s.images.total} images on your home page have no description (alt text).`,
-    why: 'AI and Google cannot see pictures; they read the description. Without one, your product photos are blank spaces to them.',
+    why: 'AI and Google cannot see pictures; they read a short description attached to each one. Without it, your photos are blank spaces to them.',
     steps: ALT[p], paste: { label: 'How to write a good one', code: 'Say what is in the picture and why it matters, in under 125 characters.\nGood: "Black 4-way stretch spandex fabric, 60 inches wide"\nPoor: "IMG_0412" or "fabric"' }, minutes: 20 }),
 
   'cites-out': (s, p) => ({
@@ -343,7 +379,7 @@ const G = {
     steps: ['Add a "Find us on" or "As featured in" line to your footer.', 'Link your Google Business Profile, Yelp, industry associations, and press mentions.'], minutes: 15 }),
 
   'citations-followable': (s, p) => ({
-    found: 'Every outside link on your page is marked "nofollow".',
+    found: 'Every link to another website on your page is marked "nofollow" (a tag that says "we don\'t vouch for this").',
     why: 'Nofollow tells crawlers you do not stand behind the link, which cuts the very connection you are trying to make.',
     steps: ['Remove rel="nofollow" from links to your own profiles and partners (keep it for ads and sponsored links).', 'Often an SEO app adds it to every link: check its settings.'], minutes: 15 }),
 
@@ -362,10 +398,19 @@ const G = {
     why: 'When someone texts or posts your link, a blank grey box gets far fewer clicks than a picture of your business.',
     steps: SHARE[p], minutes: 10 }),
 
-  'ai-crawlers': (s, p) => ({
-    found: `Your robots.txt file blocks ${s.aiBlocked.join(', ')}.`,
-    why: 'These are the crawlers behind ChatGPT, Claude, Perplexity and Google\'s AI answers. Blocked, they cannot read your site, so they cannot recommend you.',
-    steps: ROBOTS[p], paste: { label: 'Lines to have in robots.txt', code: s.aiBlocked.map((b) => `User-agent: ${b}\nAllow: /`).join('\n\n') }, minutes: 10 }),
+  'ai-crawlers': (s, p) => {
+    const search = s.aiBlocked.filter((b) => SEARCH_BOTS.includes(b));
+    const training = s.aiBlocked.filter((b) => !SEARCH_BOTS.includes(b));
+    const keep = search.length ? search : s.aiBlocked;
+    return {
+      found: `Your robots.txt file (the rules page for crawlers) blocks: ${s.aiBlocked.map((b) => `${b} (${BOT_LABEL[b] || 'AI crawler'})`).join('; ')}.`,
+      why: search.length
+        ? 'These are the bots that fetch pages when someone asks an AI assistant a question. Blocked, those assistants cannot read your site, so they cannot recommend you or link to you.'
+        : 'These bots collect pages to train AI models. Some owners block them on purpose, and that is a fair choice. But it also means those AI models learn less about you. If nobody chose this deliberately, we suggest allowing them.',
+      steps: (search.length ? [] : ['First decide: was this blocked on purpose? If yes, you can skip this mission.']).concat(ROBOTS[p]),
+      paste: { label: search.length ? 'Allow at least these (answer bots)' : 'Lines to allow them', code: keep.map((b) => `User-agent: ${b}\nAllow: /`).join('\n\n') },
+      minutes: 10 };
+  },
 
   'sitemap': (s, p) => ({
     found: 'We could not find a sitemap at /sitemap.xml or listed in your robots.txt.',
@@ -377,11 +422,13 @@ const G = {
     why: 'llms.txt is a new, plain-text introduction written for AI systems. It is optional, but few businesses have one yet, which makes it an easy edge.',
     steps: LLMS_HOST[p], paste: ['wix', 'squarespace', 'godaddy'].includes(p) ? null : { label: 'Your llms.txt (fill in the brackets)', code: llmsTxt(s, { url: s.__url }) }, minutes: 15 }),
 
+  'location-declared': (s, p) => schemaGuide(s, p, 'Your hidden business card for AI has no address, so AI cannot place you on the map for "near me" questions.'),
+
   'contact-visible': (s, p) => ({
     found: 'We could not find a phone number or email address on your home page.',
     why: 'A business you cannot reach looks like a business that may not exist. Visible contact details are a basic trust signal for people and AI alike.',
     steps: [`Add your phone number and email to the header or footer on ${NAMES[p]}.`, 'Make the phone number a tap-to-call link and the email a tap-to-email link.'],
-    paste: { label: 'Code (for custom sites)', code: '<a href="tel:+15555555555">(555) 555-5555</a> · <a href="mailto:hello@yourbusiness.com">hello@yourbusiness.com</a>' }, minutes: 10 }),
+    paste: p === 'custom' ? { label: 'Code for your developer (put in your real number and email)', code: '<a href="tel:+1XXXXXXXXXX">(XXX) XXX-XXXX</a> · <a href="mailto:you@yourbusiness.com">you@yourbusiness.com</a>' } : null, minutes: 10 }),
 };
 
 const EXISTING_WHERE = {
@@ -394,22 +441,26 @@ const EXISTING_WHERE = {
   custom: 'Ask your developer where the existing "application/ld+json" block lives.',
 };
 function addLines(s, p, found, why) {
+  const I = ind(s);
   const lines = {};
-  const what = whatYouDo(s);
-  if (!(s.schema.knowsAbout >= 3 || s.schema.knowsAboutOrg))
-    lines.knowsAbout = what ? [what, '[Second topic you are known for]', '[Third topic]'] : ['[Topic 1]', '[Topic 2]', '[Topic 3]'];
+  if (!(s.schema.knowsAbout >= 3 || s.schema.knowsAboutOrg)) lines.knowsAbout = topics(s);
   if (s.schema.sameAs < 3) {
     const prof = Object.values(s.social || {});
-    lines.sameAs = prof.length ? prof : ['[Your Google Business Profile link]', '[Your Facebook page]', '[Your LinkedIn or Instagram]'];
+    lines.sameAs = prof.length ? prof.concat(prof.length < 3 && !(s.social || {}).google ? ['[Your Google Business Profile link]'] : [])
+      : ['[Your Google Business Profile link]', '[Your Facebook page]', '[Your Yelp or LinkedIn page]'];
   }
+  if (s.org && !s.org.address && s.platform !== 'shopify') lines.address = { '@type': 'PostalAddress', streetAddress: '[Street address]',
+    addressLocality: '[City]', addressRegion: '[State]', postalCode: '[ZIP code]', addressCountry: 'US' };
   const code = JSON.stringify(lines, null, 2).replace(/^\{\n|\n\}$/g, '') + ',';
   return {
     found,
-    why: why || 'This is how AI systems connect your business to the topics and profiles that prove who you are.',
-    steps: ['Your site already has business data. Add the lines below to it instead of creating a second copy.',
-      EXISTING_WHERE[p], 'Paste the lines just after the "name" line, keep the comma at the end, and save.', 'Check it: paste your home page address into validator.schema.org.'],
-    paste: { label: 'Lines to add to your existing business data', code },
+    why: why || 'This is how AI connects your business to what you do and to the profiles that prove who you are.',
+    steps: ['Good news: your site already has a hidden business card for AI. Add the lines below inside it rather than creating a second one.',
+      EXISTING_WHERE[p], 'Paste the lines on a new line right after the line that starts with "name", keep the comma at the end, and save.',
+      'Check it: paste your home page address into validator.schema.org (free). Never edited code? This is a good one to have done for you.'],
+    paste: { label: 'Lines to add to your existing business card', code },
     minutes: 15,
+    technical: true,
   };
 }
 
@@ -418,11 +469,12 @@ function schemaGuide(s, p, found, why) {
   if (!fullMissing && s.schema.invalid === 0) return addLines(s, p, found, why);
   return {
     found,
-    why: why || 'This code is how ChatGPT, Google and other AI systems are told, not left to guess, your name, what you do, where you are, and which profiles are yours.',
-    steps: ['Fill in the [brackets] in the code below (everything else is already taken from your site).'].concat(p === 'wix' ? SCHEMA_WIX : HEAD[p]).concat([
+    why: why || 'Think of it as a business card written for machines. It tells ChatGPT, Google and other AI your name, what you do, where you are and which profiles are yours, so they don\'t have to guess.',
+    steps: ['We wrote the code below from your site. Replace anything in [square brackets] with your real details (and delete any line you can\'t fill).'].concat(p === 'wix' ? SCHEMA_WIX : HEAD[p]).concat([
       'Check it: paste your home page address into validator.schema.org.']),
-    paste: { label: 'Your business data, pre-filled', code: orgJson(s, { url: s.__url }, { forWix: p === 'wix' }) },
+    paste: { label: 'Your business card for AI, pre-filled from your site', code: orgJson(s, { url: s.__url }, { forWix: p === 'wix' }) },
     minutes: 15,
+    technical: p !== 'wix',
   };
 }
 
@@ -430,11 +482,11 @@ function schemaGuide(s, p, found, why) {
 // ("rewrite your Google listing") instead of five notes that repeat each other.
 const MISSIONS = [
   { key: 'indexable', title: 'Let search engines list your site', checks: ['indexable'] },
-  { key: 'ai-access', title: 'Let AI assistants read your site', checks: ['ai-crawlers'] },
+  { key: 'ai-access', title: (ids, sig) => ((sig.aiBlocked || []).some((b) => SEARCH_BOTS.includes(b)) ? 'Let AI assistants read your site' : 'Decide whether AI models may learn from your site'), checks: ['ai-crawlers'] },
   { key: 'listing', title: 'Rewrite how you appear in Google and AI answers',
     checks: ['title-describes', 'title-present', 'title-length', 'meta-description', 'meta-description-length', 'og-title-agrees'] },
   { key: 'business-data', title: 'Tell AI exactly who you are (business data)',
-    checks: ['schema-present', 'entity-declared', 'stated-role', 'same-as', 'knows-about', 'schema-valid'] },
+    checks: ['schema-present', 'entity-declared', 'stated-role', 'same-as', 'knows-about', 'location-declared', 'schema-valid'] },
   { key: 'heading', title: 'Make your main heading say what you do', checks: ['single-h1', 'h1-substantive'] },
   { key: 'words', title: (ids) => ids.includes('content-in-html') ? 'Write 300+ words about your business' : 'Lighten the code around your text',
     checks: ['content-in-html', 'content-density'] },
@@ -461,7 +513,7 @@ const DIM_OF = { visibility: 'visibility', clarity: 'clarity', structure: 'struc
  */
 function buildMissions(findings, signals, ctx) {
   const p = NAMES[signals.platform] ? signals.platform : 'custom';
-  const s = { ...signals, __url: ctx.url };
+  const s = { ...signals, __url: ctx.url, __host: ctx.host };
   const byId = Object.fromEntries(findings.map((f) => [f.id, f]));
   const out = [];
   for (const m of MISSIONS) {
@@ -469,14 +521,19 @@ function buildMissions(findings, signals, ctx) {
     if (!hits.length) continue;
     hits.sort((a, b) => b.points - a.points);
     const guides = hits.map((f) => { try { return G[f.id] ? G[f.id](s, p) : null; } catch (e) { return null; } });
+    // When there is no business card at all, the sub-findings ("no type",
+    // "no specialties") are the same news four times. Say it once.
+    if (hits.some((f) => f.id === 'schema-present')) {
+      for (let i = 0; i < hits.length; i++) if (['entity-declared', 'stated-role', 'knows-about', 'location-declared'].includes(hits[i].id) && guides[i]) guides[i] = { ...guides[i], found: null };
+    }
     const lead = guides.find(Boolean);
     const pastes = [];
     for (const g of guides) {
-      if (g && g.paste && !pastes.some((x) => x.code === g.paste.code)) pastes.push(g.paste);
+      for (const one of [].concat((g && g.paste) || [])) if (one && !pastes.some((x) => x.code === one.code)) pastes.push(one);
     }
     const points = hits.reduce((a, f) => a + (f.points || 0), 0);
     out.push({
-      id: m.key, mission: m.key, title: typeof m.title === 'function' ? m.title(hits.map((h) => h.id)) : m.title,
+      id: m.key, mission: m.key, title: typeof m.title === 'function' ? m.title(hits.map((h) => h.id), signals) : m.title,
       detail: lead ? lead.why : hits[0].detail,
       dimension: DIM_OF[hits[0].dimension] || hits[0].dimension,
       severity: points >= 6 ? 'high' : points >= 3 ? 'medium' : 'low',
@@ -484,16 +541,22 @@ function buildMissions(findings, signals, ctx) {
       points,
       checks: hits.map((f) => f.title),
       guide: lead ? {
-        found: guides.filter(Boolean).map((g) => g.found),
+        found: guides.filter((g) => g && g.found).map((g) => g.found),
         why: lead.why,
         steps: lead.steps,
         pastes,
         minutes: Math.max(...guides.filter(Boolean).map((g) => g.minutes || 10)),
+        technical: guides.some((g) => g && g.technical) || (m.key === 'heading' && p === 'shopify' && s.h1Logo),
         platform: p, platformName: NAMES[p],
       } : null,
     });
   }
-  return out.sort((a, b) => b.points - a.points);
+  // Blockers first: while search engines or AI are shut out, nothing else
+  // on the list can help.
+  const searchBlocked = (signals.aiBlocked || []).some((b) => SEARCH_BOTS.includes(b));
+  const BLOCKER = { indexable: 2, 'ai-access': searchBlocked ? 1 : 0 };
+  return out.map((m) => (BLOCKER[m.id] ? { ...m, blocker: true, severity: 'high' } : m))
+    .sort((a, b) => (BLOCKER[b.id] || 0) - (BLOCKER[a.id] || 0) || b.points - a.points);
 }
 
 // Kept for callers that want per-check lessons.
@@ -508,13 +571,15 @@ function attachGuides(findings, signals, ctx) {
 }
 
 // What an AI can currently say about the business, read from the same signals.
-function aiProfile(s) {
+function aiProfile(s, ctx) {
+  s = { ...s, __host: ctx && ctx.host };
   return {
     name: s.siteName || null,
     platform: s.platform, platformName: NAMES[s.platform] || 'your website',
     what: whatYouDo(s),
     kind: (s.org && s.org.type) || null,
     title: s.title || null,
+    titleDescribes: (() => { try { const c = require('./score').CHECKS.find((x) => x.id === 'title-describes'); return c.test(s); } catch (e) { return null; } })(),
     description: s.metaDescription || null,
     where: place({ org: s.org }),
     phone: !!(s.contact && (s.contact.tel || s.contact.phoneText)),
@@ -523,6 +588,9 @@ function aiProfile(s) {
     aiBlocked: s.aiBlocked,
     words: s.wordCount,
     faq: s.schema.hasFaq,
+    industry: ind(s).label,
+    services: ind(s).services,
+    hidden: !!(s.robots && /noindex/i.test(s.robots)),
   };
 }
 

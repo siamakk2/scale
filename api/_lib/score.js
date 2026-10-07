@@ -67,7 +67,7 @@ const CHECKS = [
   { id: 'h1-substantive', dim: 'clarity', weight: 4,
     title: 'The main heading says something',
     detail: 'A heading that is only a tagline spends the strongest signal on atmosphere.',
-    test: (s) => (s.headings.h1[0] ? s.headings.h1[0].split(/\s+/).length >= 3 : false) },
+    test: (s) => (s.headings.h1[0] ? s.headings.h1[0].split(/\s+/).length >= 3 : null) },
 
   { id: 'heading-structure', dim: 'clarity', weight: 3,
     title: 'Has section headings',
@@ -120,6 +120,12 @@ const CHECKS = [
     test: (s) => (s.images.total === 0 ? null : s.images.missingAlt / s.images.total <= 0.2) },
 
   // ---- rubric v2 additions -------------------------------------------------
+  { id: 'location-declared', dim: 'structure', weight: 2,
+    title: 'Business data includes your address',
+    detail: 'An address in your business data is what places you on the map for "near me" questions.',
+    // Online-only stores have no address to give; not their failing.
+    test: (s) => (s.org && s.platform !== 'shopify' ? !!s.org.address : null) },
+
   { id: 'ai-crawlers', dim: 'visibility', weight: 6,
     title: 'AI assistants are allowed to read your site',
     detail: 'If robots.txt blocks GPTBot, ClaudeBot or PerplexityBot, those assistants cannot read or recommend you.',
@@ -140,6 +146,8 @@ const CHECKS = [
     detail: 'A title that is only a brand name tells a stranger, and an AI, nothing about what you sell.',
     test: (s) => {
       if (!s.title) return null;
+      // Builder defaults nobody meant to publish.
+      if (/just another wordpress site|^home$|^untitled|my (wix )?site|coming soon|^new page/i.test(s.title.trim())) return false;
       const brand = String(s.siteName || '').toLowerCase();
       const rest = s.title.toLowerCase().replace(brand, ' ')
         .replace(/\b(home|homepage|welcome|official site|official website)\b/g, ' ')
@@ -251,11 +259,26 @@ function score(signals, history = []) {
     const possible = POSSIBLE[f.dimension] || 1;
     f.points = Math.max(1, Math.round((f.weight / possible) * 100 / (measured.length || 4)));
   }
+  // A page that tells search engines not to list it is invisible, however
+  // well built. Say so in the number: cap it, and credit the fix with the
+  // points it really unlocks.
+  let overall = baseOverall(scores);
+  const hidden = findings.find((f) => f.id === 'indexable');
+  if (hidden) {
+    scores.blocked = 'noindex'; scores.visibility = 0;
+    if (overall > 20) { hidden.points += overall - 20; overall = 20; }
+  }
+  // Rounded per-fix points must not promise more than 100.
+  const room = 100 - (overall || 0);
+  const total = findings.reduce((a, f) => a + f.points, 0);
+  if (total > room && total > 0) {
+    for (const f of findings) if (f !== hidden) f.points = Math.max(1, Math.floor(f.points * room / total));
+  }
   findings.sort((a, b) => b.points - a.points || b.weight - a.weight);
   scores.rubric = RUBRIC;
 
   return {
-    overall: baseOverall(scores),
+    overall,
     scores,
     findings,
     checkedAt: new Date().toISOString(),

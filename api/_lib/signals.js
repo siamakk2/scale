@@ -121,12 +121,16 @@ const SOCIAL = [
   ['yelp', /yelp\.com\/biz\/[^"'?#\s]+/i],
   ['google', /(?:g\.page|maps\.app\.goo\.gl|google\.com\/maps)\/[^"'\s]+/i],
 ];
+const PLATFORM_HANDLE = /\.com\/(?:@)?(wix\w*|mundowix|shopify\w*|squarespace|wordpress\w*|godaddy\w*|webflow|weebly|duda\w*|wixespanol)(?:[\/?#]|$)/i;
 // Profile links the page already shows people, so the fix can reuse them.
 function socialProfiles(html) {
   const out = {};
   const re = /<a\b[^>]*href\s*=\s*["']([^"']+)["']/gi; let m;
   while ((m = re.exec(html))) {
-    for (const [k, rx] of SOCIAL) if (!out[k] && rx.test(m[1]) && /^https?:/i.test(m[1])) out[k] = m[1].split('#')[0];
+    // Site builders ship templates linked to their OWN accounts (Wix's
+    // facebook.com/WixEspanol, instagram.com/wix). Those are not the owner's.
+    if (PLATFORM_HANDLE.test(m[1])) continue;
+    for (const [k, rx] of SOCIAL) if (!out[k] && rx.test(m[1]) && /^https?:/i.test(m[1])) out[k] = m[1].split('#')[0].replace(/\/review\/?$/, '');
   }
   return out;
 }

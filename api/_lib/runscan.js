@@ -109,9 +109,14 @@ async function runScan(db, biz, { trigger = 'manual', plan = 'free' } = {}) {
     // their title and the points they are worth, so nothing is hidden.
     const cap0 = PLANS[plan] && PLANS[plan].fixes;
     const missions = buildMissions(result.findings, signals, { url: url.toString(), host: url.hostname })
-      .map((m, i) => (cap0 && i >= cap0 ? { ...m, guide: null, locked: true } : m));
+      .map((m, i, arr) => {
+        // Blockers and contact details are never behind the paywall.
+        const free = m.blocker || m.id === 'contact';
+        const rank = arr.slice(0, i).filter((x) => !(x.blocker || x.id === 'contact')).length;
+        return cap0 && !free && rank >= cap0 ? { ...m, guide: null, locked: true } : m;
+      });
     result.findings = missions;
-    const profile = aiProfile(signals);
+    const profile = aiProfile(signals, { host: url.hostname });
 
     await db.from('scans').update({
       status: 'complete', overall_score: result.overall, scores: result.scores,
@@ -128,8 +133,8 @@ async function runScan(db, biz, { trigger = 'manual', plan = 'free' } = {}) {
     const keptTitles = new Set((kept || []).map((k) => k.title));
     const all = actionsFrom(result.findings, scan.id)
       .map((a) => ({ ...a, business_id: biz.id }));
-    const cap = PLANS[plan] && PLANS[plan].fixes;
-    const actions = (cap ? all.slice(0, cap) : all).filter((a) => !keptTitles.has(a.title));
+    const unlocked = new Set(result.findings.filter((m) => !m.locked).map((m) => m.title));
+    const actions = all.filter((a) => unlocked.has(a.title) && !keptTitles.has(a.title));
     if (actions.length) await db.from('actions').insert(actions);
 
     await db.from('stage_progress').update({ status: 'complete', completed_at: new Date().toISOString() })

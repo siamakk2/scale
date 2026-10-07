@@ -80,7 +80,7 @@ module.exports = async function handler(req, res) {
       overall: result.overall,
       scores: result.scores,
       findings: result.findings,
-      profile: aiProfile(signals),
+      profile: aiProfile(signals, { host: url.hostname }),
       checkedAt: result.checkedAt,
     });
   } catch (e) {
