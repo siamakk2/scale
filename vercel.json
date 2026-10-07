@@ -48,6 +48,9 @@
     },
     "api/answers.js": {
       "maxDuration": 60
+    },
+    "api/answers-selftest.js": {
+      "maxDuration": 60
     }
   }
 }
