@@ -174,7 +174,8 @@ function namesIn(text) {
   while ((m = heading.exec(text))) push(m[1]);
   const plainItem = /^\s*(?:\d+[.)]|[-•])\s+([A-Z][^:\n–—(*]{2,60})(?=\s[—–-]\s|:|\s\()/gm;
   while ((m = plainItem.exec(text))) push(m[1]);
-  return out.slice(0, 10);
+  // Drop shorthand repeats ("Traverso" after "Traverso Tree Service") and "A or B".
+  return out.filter((n) => !/\sor\s/i.test(n) && !out.some((o) => o !== n && norm(o).startsWith(norm(n) + ' '))).slice(0, 10);
 }
 
 function analyse(res, profile, host) {
@@ -229,7 +230,10 @@ async function runAnswers(profile, host) {
   for (const r of results) if (r.q === brandQ && !r.error) r.known = r.cited || (r.mentioned && !NEG.test(r.text));
   const brand = results.filter((r) => r.q === brandQ && !r.error);
   const tally = (arr) => { const m = {}; for (const x of arr) m[x] = (m[x] || 0) + 1; return Object.entries(m).sort((a, b) => b[1] - a[1]); };
-  const rivals = tally(disc.flatMap((r) => r.named.map((n) => n.replace(/\s+/g, ' ')))).slice(0, 8).map(([n, c]) => ({ name: n, count: c }));
+  // Count by normalised name so "Hamilton Tree Service" and "... Inc" are one rival.
+  const display = {};
+  const keys = disc.flatMap((r) => Array.from(new Set(r.named.map((n) => { const k = norm(n); if (!display[k] || n.length < display[k].length) display[k] = n; return k; }))));
+  const rivals = tally(keys).slice(0, 8).map(([k, c]) => ({ name: display[k], count: c }));
   const own = host.replace(/^www\./, '');
   const doms = tally(results.filter((r) => !r.error).flatMap((r) => Array.from(new Set(r.sources.map((s) => s.domain)))))
     .filter(([d]) => d !== own && !d.endsWith('.' + own)).slice(0, 12)
