@@ -43,7 +43,12 @@ module.exports = async function handler(req, res) {
     const { data: recent } = await db.from('scans').select('started_at')
       .eq('business_id', biz.id).eq('status', 'complete').gte('started_at', since)
       .order('started_at', { ascending: false }).limit(1);
-    if (recent && recent.length) {
+    // One free re-scan when the last scan predates the step-by-step lessons,
+    // so nobody is stuck looking at the old notes for a month.
+    const { data: last } = await db.from('scans').select('scores').eq('business_id', biz.id)
+      .eq('status', 'complete').order('started_at', { ascending: false }).limit(1);
+    const legacy = last && last[0] && !(last[0].scores && last[0].scores.rubric);
+    if (recent && recent.length && !legacy) {
       const next = new Date(new Date(recent[0].started_at).getTime() + P.scanEveryDays * 864e5);
       return res.status(402).json({
         code: 'upgrade', plan, next_at: next.toISOString(),

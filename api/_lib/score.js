@@ -107,7 +107,7 @@ const CHECKS = [
   { id: 'knows-about', dim: 'structure', weight: 3,
     title: 'Declares areas of expertise',
     detail: 'knowsAbout is how you get associated with a topic rather than only a name.',
-    test: (s) => s.schema.knowsAbout >= 3 },
+    test: (s) => s.schema.knowsAbout >= 3 || !!s.schema.knowsAboutOrg },
 
   { id: 'faq-schema', dim: 'structure', weight: 3,
     title: 'Publishes question-and-answer content',

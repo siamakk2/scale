@@ -167,7 +167,9 @@ function extract(html, host, extras) {
     .filter(Boolean);
 
   const person = ld.find((n) => n && n['@type'] === 'Person') || null;
-  const org = ld.find((n) => n && /Organization|LocalBusiness|ProfessionalService|Store|Restaurant|Service|Corporation|Clinic|Dentist|Attorney|Agent|Contractor|Physician|Hotel|Cafe|Bakery|Business/.test(String(n['@type']))) || null;
+  const orgs = ld.filter((n) => n && /Organization|LocalBusiness|ProfessionalService|Store|Restaurant|Service|Corporation|Clinic|Dentist|Attorney|Agent|Contractor|Physician|Hotel|Cafe|Bakery|Business/.test(String(n['@type']))) || null;
+  // Prefer the most specific type (TextileStore over Organization).
+  const org = orgs.find((n) => !/^(Organization|Corporation)$/.test(String([].concat(n['@type'])[0]))) || orgs[0] || null;
 
   const body = textOf(html);
   const title = (html.match(/<title[^>]*>([\s\S]*?)<\/title>/i) || [])[1];
@@ -195,7 +197,8 @@ function extract(html, host, extras) {
       // The entity declarations a model reads to answer "who is this".
       jobTitle: person ? person.jobTitle || null : null,
       knowsAbout: person && Array.isArray(person.knowsAbout) ? person.knowsAbout.length : 0,
-      sameAs: ((person && person.sameAs) || (org && org.sameAs) || []).length,
+      sameAs: Math.max(((person && person.sameAs) || []).length, ...orgs.map((o) => [].concat(o.sameAs || []).length), 0),
+      knowsAboutOrg: orgs.some((o) => o.knowsAbout),
       hasFaq: types.includes('FAQPage'),
       hasBreadcrumb: types.includes('BreadcrumbList'),
     },

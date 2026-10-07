@@ -384,7 +384,38 @@ const G = {
     paste: { label: 'Code (for custom sites)', code: '<a href="tel:+15555555555">(555) 555-5555</a> · <a href="mailto:hello@yourbusiness.com">hello@yourbusiness.com</a>' }, minutes: 10 }),
 };
 
+const EXISTING_WHERE = {
+  shopify: 'On Shopify this usually lives in your theme (Online Store → Themes → ⋯ → Edit code, search for "ld+json") or in an SEO app\'s settings.',
+  wix: 'On Wix: Pages & Menu → Home → ⋯ → SEO basics → Advanced SEO → Structured data markup → edit the existing markup.',
+  squarespace: 'On Squarespace: Settings → Developer Tools → Code Injection → Header, if it was added there.',
+  wordpress: 'On WordPress it usually comes from Yoast or Rank Math (their Schema settings) or a header plugin like WPCode.',
+  webflow: 'On Webflow: Site settings → Custom code → Head code, or the page\'s custom code.',
+  godaddy: 'On GoDaddy: Settings → Site-wide code.',
+  custom: 'Ask your developer where the existing "application/ld+json" block lives.',
+};
+function addLines(s, p, found, why) {
+  const lines = {};
+  const what = whatYouDo(s);
+  if (!(s.schema.knowsAbout >= 3 || s.schema.knowsAboutOrg))
+    lines.knowsAbout = what ? [what, '[Second topic you are known for]', '[Third topic]'] : ['[Topic 1]', '[Topic 2]', '[Topic 3]'];
+  if (s.schema.sameAs < 3) {
+    const prof = Object.values(s.social || {});
+    lines.sameAs = prof.length ? prof : ['[Your Google Business Profile link]', '[Your Facebook page]', '[Your LinkedIn or Instagram]'];
+  }
+  const code = JSON.stringify(lines, null, 2).replace(/^\{\n|\n\}$/g, '') + ',';
+  return {
+    found,
+    why: why || 'This is how AI systems connect your business to the topics and profiles that prove who you are.',
+    steps: ['Your site already has business data. Add the lines below to it instead of creating a second copy.',
+      EXISTING_WHERE[p], 'Paste the lines just after the "name" line, keep the comma at the end, and save.', 'Check it: paste your home page address into validator.schema.org.'],
+    paste: { label: 'Lines to add to your existing business data', code },
+    minutes: 15,
+  };
+}
+
 function schemaGuide(s, p, found, why) {
+  const fullMissing = !s.schema.hasOrg && !s.schema.hasPerson;
+  if (!fullMissing && s.schema.invalid === 0) return addLines(s, p, found, why);
   return {
     found,
     why: why || 'This code is how ChatGPT, Google and other AI systems are told, not left to guess, your name, what you do, where you are, and which profiles are yours.',
@@ -405,7 +436,8 @@ const MISSIONS = [
   { key: 'business-data', title: 'Tell AI exactly who you are (business data)',
     checks: ['schema-present', 'entity-declared', 'stated-role', 'same-as', 'knows-about', 'schema-valid'] },
   { key: 'heading', title: 'Make your main heading say what you do', checks: ['single-h1', 'h1-substantive'] },
-  { key: 'words', title: 'Write 300+ words about your business', checks: ['content-in-html', 'content-density'] },
+  { key: 'words', title: (ids) => ids.includes('content-in-html') ? 'Write 300+ words about your business' : 'Lighten the code around your text',
+    checks: ['content-in-html', 'content-density'] },
   { key: 'sections', title: 'Break your home page into clear sections', checks: ['heading-structure'] },
   { key: 'faq', title: 'Add a Q&A section customers (and AI) can quote', checks: ['faq-schema'] },
   { key: 'contact', title: 'Show your phone number and email', checks: ['contact-visible'] },
@@ -444,7 +476,7 @@ function buildMissions(findings, signals, ctx) {
     }
     const points = hits.reduce((a, f) => a + (f.points || 0), 0);
     out.push({
-      id: m.key, mission: m.key, title: m.title,
+      id: m.key, mission: m.key, title: typeof m.title === 'function' ? m.title(hits.map((h) => h.id)) : m.title,
       detail: lead ? lead.why : hits[0].detail,
       dimension: DIM_OF[hits[0].dimension] || hits[0].dimension,
       severity: points >= 6 ? 'high' : points >= 3 ? 'medium' : 'low',
