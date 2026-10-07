@@ -84,7 +84,8 @@ async function askChatGPT(q, profile) {
     const r = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST', signal,
       headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: process.env.OPENAI_MODEL || 'gpt-5.5', input: q, tools: [tool], tool_choice: 'auto' }),
+      body: JSON.stringify({ model: process.env.OPENAI_MODEL || 'gpt-5.5', input: q, tools: [tool], tool_choice: 'auto',
+        reasoning: { effort: 'low' }, max_output_tokens: 1500 }),
     });
     const j = await r.json();
     if (!r.ok) throw new Error('OpenAI ' + r.status + ': ' + ((j.error && j.error.message) || '').slice(0, 160));
@@ -145,20 +146,34 @@ const DIRECTORY = /(^|\.)(yelp|google|maps\.google|angi|angieslist|homeadvisor|t
 const domainOf = (u) => { try { return new URL(u).hostname.replace(/^www\./, '').toLowerCase(); } catch (e) { return null; } };
 const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').replace(/\b(inc|llc|ltd|co|corp|the)\b/g, ' ').replace(/\s+/g, ' ').trim();
 
-// Business names an answer puts forward: bold text and list-item leads.
+// Business names an answer puts forward. Assistants list recommendations as
+// numbered or bulleted items or headings that START with the name, usually in
+// bold. Bold text elsewhere ("A+ rating", "2-3 bids") is emphasis, not a name.
+const NOT_NAME = /\b(rating|license|licen[cs]ed|bids?|why|pick|picks|shortlist|area|areas|snapshot|step|steps|tips?|summary|overview|note|cost|price|pricing|reviews?|insured|certified|best for|consider|option|options|questions?|call first|what to|how to|top)\b/i;
+function cleanName(n) {
+  n = String(n).replace(/[*_`#]/g, '').replace(/\[\d+\]/g, '').replace(/\s+/g, ' ').trim();
+  n = n.split(/\s[—–-]\s|:\s|\s\(/)[0].trim().replace(/,?\s+(Inc|LLC|L\.L\.C|Ltd|Corp|Co)\.?$/i, (x) => x.replace(',', '')).replace(/[.,;:]+$/, '');
+  return n;
+}
+function isName(n) {
+  if (n.length < 3 || n.length > 50) return false;
+  if (!/^[A-Z0-9]/.test(n) || /,/.test(n) || NOT_NAME.test(n)) return false;
+  const words = n.split(' ');
+  if (words.length > 7) return false;
+  if ((n.match(/\d/g) || []).length > 3) return false;
+  return words.filter((w) => /^[A-Z0-9&]/.test(w)).length >= Math.ceil(words.length / 2);
+}
 function namesIn(text) {
   const out = [];
-  const push = (n) => {
-    n = String(n).replace(/[*_`#]/g, '').replace(/\[\d+\]/g, '').replace(/\s+/g, ' ').trim().replace(/[:–—-]+$/, '').trim();
-    if (n.length < 3 || n.length > 60 || /^(note|tip|why|summary|overview|pros|cons|cost|price|services?|location|contact|reviews?|rating|address|phone|website|hours|key|best|top|conclusion|recommendation|important|specialt\w*)$/i.test(n)) return;
-    if (n.split(' ').length > 7) return;
-    if (!out.some((x) => norm(x) === norm(n))) out.push(n);
-  };
+  const push = (raw) => { const n = cleanName(raw); if (isName(n) && !out.some((x) => norm(x) === norm(n))) out.push(n); };
   let m;
-  const bold = /\*\*([^*\n]{3,70})\*\*/g;
-  while ((m = bold.exec(text))) push(m[1]);
-  const lead = /^\s*(?:\d+[.)]|[-•])\s+([A-Z][^:\n–—(]{2,60})(?=[:–—(]|\s-\s)/gm;
-  while ((m = lead.exec(text))) push(m[1]);
+  // "1. **Name**", "- **Name**", "### Name", "**Name** —" at the start of a line
+  const lineStart = /^\s*(?:\d+[.)]\s+|[-•*]\s+|#{2,4}\s+)?(?:\d+[.)]\s+)?\*\*([^*\n]{3,80})\*\*/gm;
+  while ((m = lineStart.exec(text))) push(m[1]);
+  const heading = /^\s*#{2,4}\s+(?:\d+[.)]\s+)?([^\n*]{3,60})$/gm;
+  while ((m = heading.exec(text))) push(m[1]);
+  const plainItem = /^\s*(?:\d+[.)]|[-•])\s+([A-Z][^:\n–—(*]{2,60})(?=\s[—–-]\s|:|\s\()/gm;
+  while ((m = plainItem.exec(text))) push(m[1]);
   return out.slice(0, 10);
 }
 
