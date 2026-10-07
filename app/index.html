@@ -72,7 +72,8 @@
 <header class="top">
   <div class="top-in">
     <div class="logo">S<b>.</b>C<b>.</b>A<b>.</b>L<b>.</b>E<b>.</b></div>
-    <button class="btn ghost" id="signout" style="display:none;padding:8px 14px">Sign out</button>
+    <div style="display:flex;gap:8px"><a class="btn ghost" id="adminLink" href="/admin/" style="display:none;padding:8px 14px">Admin</a>
+    <button class="btn ghost" id="signout" style="display:none;padding:8px 14px">Sign out</button></div>
   </div>
 </header>
 
@@ -238,6 +239,7 @@ async function loadMe() {
   const r = await api('/api/me');
   if (!r.ok) return;
   ME = r.out;
+  $('adminLink').style.display = ME.is_admin ? 'inline-flex' : 'none';
   const paid = ME.plan !== 'free';
   $('planBadge').textContent = ME.limits.name + ' plan';
   $('planBadge').classList.toggle('paid', paid);

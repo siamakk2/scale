@@ -21,5 +21,7 @@ module.exports = async function handler(req, res) {
                      cancel_at_period_end: sub.cancel_at_period_end,
                      has_customer: !!sub.stripe_customer_id } : null,
     billing_ready: !!process.env.STRIPE_SECRET_KEY,
+    is_admin: (process.env.ADMIN_EMAILS || 'siamakk2@gmail.com').split(',')
+      .map((x) => x.trim().toLowerCase()).includes((user.email || '').toLowerCase()),
   });
 };

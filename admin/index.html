@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S.C.A.L.E. admin</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/app.css">
+<style>
+  .wrap{max-width:1240px}
+  .msg{max-width:460px;margin:90px auto;text-align:center;padding:0 16px}
+  .msg .card{text-align:center}
+  .hd{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap;margin:28px 0 18px}
+  .hd h1{font-family:var(--display);font-size:26px}
+  .hd .when{font-family:var(--mono);font-size:12px;color:var(--dim)}
+  .kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:16px}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 16px 14px}
+  .kpi .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+  .kpi .v{font-family:var(--display);font-size:30px;font-weight:700;margin-top:6px;line-height:1.1}
+  .kpi .s{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .kpi.hero .v{color:var(--amber)}
+  .grid{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:16px;align-items:start}
+  .grid>*{min-width:0}
+  .ghost{background:var(--surface);color:var(--text);border:1px solid var(--line-bright);text-decoration:none}
+  .tools{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .tools input,.tools select{background:var(--panel);color:var(--text);border:1px solid var(--line-bright);
+    border-radius:9px;padding:9px 12px;font-family:var(--body);font-size:14px}
+  .tools input{flex:1;min-width:180px}
+  table.cust{width:100%;border-collapse:collapse;font-size:14px}
+  .cust th{text-align:left;font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--dim);font-weight:600;padding:10px 10px;border-bottom:1px solid var(--line)}
+  .cust td{padding:12px 10px;border-bottom:1px solid var(--line);vertical-align:middle;color:var(--muted)}
+  .cust tr.row{cursor:pointer}
+  .cust tr.row:hover td{background:rgba(255,255,255,.025)}
+  .cust tr.sel td{background:rgba(255,180,84,.06)}
+  .cust .em{color:var(--text);font-weight:500}
+  .cust .sub{font-size:12px;color:var(--dim)}
+  .num{font-family:var(--mono);color:var(--text)}
+  .tw{overflow-x:auto}
+  .pill{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;padding:3px 9px;
+    border-radius:100px;border:1px solid var(--line-bright);color:var(--dim);white-space:nowrap}
+  .pill.growth,.pill.scale{color:var(--amber);border-color:rgba(255,180,84,.5)}
+  .pill.warn{color:#ffcf8f;border-color:rgba(255,180,84,.5)}
+  .pill.bad{color:#ffa3a3;border-color:rgba(255,122,122,.5)}
+  .up{color:var(--good)} .down{color:var(--bad)}
+  .feed{max-height:720px;overflow-y:auto}
+  .ev{display:grid;grid-template-columns:22px 1fr;gap:8px;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+  .ev .ic{font-size:13px;line-height:1.5}
+  .ev .t{color:var(--text)}
+  .ev .w{font-size:12px;color:var(--dim);margin-top:2px}
+  .detail{display:none}
+  .detail.on{display:block}
+  .site{border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:12px;background:var(--panel)}
+  .site h4{font-family:var(--display);font-size:16px}
+  .site .u{font-size:12.5px;color:var(--dim);word-break:break-all}
+  .site .row2{display:flex;align-items:center;gap:14px;margin-top:10px;flex-wrap:wrap}
+  .site .big{font-family:var(--display);font-size:34px;font-weight:700}
+  .spark{width:150px;height:40px;display:block}
+  .fixes{margin-top:10px;font-size:13px;color:var(--muted)}
+  .fixes li{margin:4px 0 4px 16px}
+  .dlinks{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .dlinks a{font-size:13px;color:var(--amber);text-decoration:none;border:1px solid var(--line-bright);border-radius:8px;padding:7px 11px}
+  .empty{color:var(--dim);font-size:14px;padding:18px 0}
+  @media(max-width:1100px){.kpis{grid-template-columns:repeat(3,1fr)}.grid{grid-template-columns:1fr}}
+  @media(max-width:560px){.kpis{grid-template-columns:repeat(2,1fr)}.kpi .v{font-size:24px}
+    .cust .hide-sm{display:none}.wrap{padding:0 14px}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <div class="logo">S<b>.</b>C<b>.</b>A<b>.</b>L<b>.</b>E<b>.</b> <span style="font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.14em;margin-left:8px">ADMIN</span></div>
+    <a class="btn ghost" href="/app/" style="padding:8px 14px">Your dashboard</a>
+  </div>
+</header>
+
+<section id="gate" class="msg"><div class="card"><p class="lead"><span class="spin"></span>Loading…</p></div></section>
+
+<main id="main" class="wrap" style="display:none">
+  <div class="hd"><h1>Customers &amp; revenue</h1><div class="when" id="when"></div></div>
+  <div class="kpis" id="kpis"></div>
+
+  <div class="grid">
+    <div>
+      <div class="card">
+        <div class="sec-h">Customers</div>
+        <div class="tools">
+          <input id="q" type="search" placeholder="Search email or website" aria-label="Search customers">
+          <select id="fplan" aria-label="Filter by plan">
+            <option value="">All plans</option><option value="paying">Paying</option>
+            <option value="free">Free</option><option value="growth">Growth</option><option value="scale">Scale</option>
+            <option value="attention">Needs attention</option>
+          </select>
+        </div>
+        <div class="tw"><table class="cust">
+          <thead><tr><th>Customer</th><th>Plan</th><th class="hide-sm">Websites</th><th>Score</th><th class="hide-sm">Fixes done</th><th class="hide-sm">Last scan</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table></div>
+      </div>
+
+      <div class="card detail" id="detail"></div>
+    </div>
+
+    <div class="card">
+      <div class="sec-h">Activity</div>
+      <div class="feed" id="feed"></div>
+    </div>
+  </div>
+</main>
+
+<script src="/assets/vendor/supabase.js"></script>
+<script src="/assets/config.js"></script>
+<script>
+const sb = supabase.createClient(window.SCALE_CONFIG.supabaseUrl, window.SCALE_CONFIG.supabaseKey,
+  { auth: { flowType: 'implicit', persistSession: true, autoRefreshToken: true } });
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const day = (d) => d ? new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+const ago = (d) => {
+  if (!d) return '—';
+  const m = Math.round((Date.now() - Date.parse(d)) / 60000);
+  if (m < 60) return m + 'm ago'; if (m < 1440) return Math.round(m / 60) + 'h ago';
+  const dd = Math.round(m / 1440); return dd < 45 ? dd + 'd ago' : day(d);
+};
+let DATA = null, SEL = null;
+
+function gate(html) { $('gate').style.display = 'block'; $('main').style.display = 'none'; $('gate').innerHTML = '<div class="card">' + html + '</div>'; }
+
+function kpis(k) {
+  const t = (key, v, s, hero) => `<div class="kpi ${hero ? 'hero' : ''}"><div class="k">${key}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
+  $('kpis').innerHTML =
+    t('Monthly revenue', '$' + k.mrr.toLocaleString(), k.paying + ' paying · ' + k.cancelling + ' cancelling', true) +
+    t('Customers', k.customers, k.signups_7 + ' new this week · ' + k.signups_30 + ' this month') +
+    t('Plans', k.by_plan.growth + k.by_plan.scale, k.by_plan.growth + ' Growth · ' + k.by_plan.scale + ' Scale · ' + k.by_plan.free + ' Free') +
+    t('Websites', k.websites, k.sites_improved + ' improved since last scan') +
+    t('Scans', k.scans_30, k.scans_7 + ' this week · last 30 days') +
+    t('Fixes completed', k.fixes_done, k.past_due ? k.past_due + ' payment' + (k.past_due > 1 ? 's' : '') + ' past due' : 'no payments past due');
+}
+
+function needsAttention(c) {
+  return c.status === 'past_due' || c.cancel_at_period_end ||
+    c.sites.some(s => s.failed_scans) || (c.plan !== 'free' && (!c.last_scan || Date.now() - Date.parse(c.last_scan) > 35 * 864e5));
+}
+
+function score(c) {
+  const s = c.sites.find(x => x.score != null); if (!s) return '<span class="sub">no scan</span>';
+  const d = s.prev_score != null ? s.score - s.prev_score : null;
+  return `<span class="num">${s.score}</span>` + (d ? ` <span class="${d > 0 ? 'up' : 'down'}" style="font-size:12px">${d > 0 ? '+' : ''}${d}</span>` : '');
+}
+function planPill(c) {
+  let p = `<span class="pill ${c.plan}">${c.plan}</span>`;
+  if (c.status === 'past_due') p += ' <span class="pill bad">past due</span>';
+  else if (c.cancel_at_period_end) p += ' <span class="pill warn">cancelling</span>';
+  return p;
+}
+
+function rows() {
+  const q = $('q').value.trim().toLowerCase(), f = $('fplan').value;
+  const list = DATA.customers.filter(c => {
+    if (q && !(c.email || '').toLowerCase().includes(q) && !c.sites.some(s => (s.url + ' ' + s.name).toLowerCase().includes(q))) return false;
+    if (f === 'paying') return c.plan !== 'free';
+    if (f === 'attention') return needsAttention(c);
+    return !f || c.plan === f;
+  });
+  $('rows').innerHTML = list.length ? list.map(c => `<tr class="row ${SEL === c.id ? 'sel' : ''}" data-id="${c.id}">
+      <td><div class="em">${esc(c.email)}</div><div class="sub">joined ${day(c.created_at)} · seen ${ago(c.last_sign_in)}</div></td>
+      <td>${planPill(c)}</td>
+      <td class="hide-sm"><span class="num">${c.sites.length}</span> <span class="sub">${esc(c.sites[0] ? c.sites[0].url : '')}</span></td>
+      <td>${score(c)}</td>
+      <td class="hide-sm"><span class="num">${c.fixes_done}</span><span class="sub"> / ${c.fixes_done + c.fixes_open}</span></td>
+      <td class="hide-sm">${ago(c.last_scan)}</td></tr>`).join('')
+    : '<tr><td colspan="6" class="empty">No customers match.</td></tr>';
+}
+
+function spark(hist) {
+  const pts = hist.filter(h => typeof h.score === 'number');
+  if (pts.length < 2) return '<span class="sub">trend after 2nd scan</span>';
+  const vs = pts.map(h => h.score), lo = Math.max(0, Math.min(...vs) - 5), hi = Math.min(100, Math.max(...vs) + 5);
+  const W = 150, H = 40, p = 4, x = i => p + i * (W - 2 * p) / (pts.length - 1),
+        y = v => H - p - (v - lo) / Math.max(1, hi - lo) * (H - 2 * p);
+  const d = pts.map((h, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(h.score).toFixed(1)).join('');
+  return `<svg class="spark" viewBox="0 0 ${W} ${H}" role="img" aria-label="Score trend from ${pts[0].score} to ${pts[pts.length - 1].score}">
+    <path d="${d}" fill="none" stroke="#ffb454" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    ${pts.map((h, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(h.score).toFixed(1)}" r="4" fill="transparent"><title>${h.score} on ${day(h.at)}</title></circle>`).join('')}
+    <circle cx="${x(pts.length - 1).toFixed(1)}" cy="${y(pts[pts.length - 1].score).toFixed(1)}" r="3" fill="#ffb454" stroke="#0b0f16" stroke-width="2"/></svg>`;
+}
+
+function detail(id) {
+  SEL = id; rows();
+  const c = DATA.customers.find(x => x.id === id); if (!c) return;
+  const stripe = c.stripe_customer ? `<a href="https://dashboard.stripe.com/customers/${encodeURIComponent(c.stripe_customer)}" target="_blank" rel="noopener">Open in Stripe ↗</a>` : '';
+  const renew = c.renews && c.plan !== 'free' ? (c.cancel_at_period_end ? 'Ends ' : 'Renews ') + day(c.renews) : '';
+  $('detail').innerHTML = `<div class="sec-h">${esc(c.email)}</div>
+    <div class="sub" style="font-size:13px">${planPill(c)} &nbsp; ${c.mrr ? '$' + c.mrr + '/month · ' : ''}${renew} · joined ${day(c.created_at)} · last seen ${ago(c.last_sign_in)}</div>
+    <div class="dlinks"><a href="mailto:${esc(c.email)}?subject=${encodeURIComponent('Your S.C.A.L.E. results')}">Email them</a>${stripe}</div>
+    ${c.sites.length ? c.sites.map(s => `<div class="site"><h4>${esc(s.name)}</h4><div class="u">${esc(s.url)}</div>
+      <div class="row2"><div class="big">${s.score ?? '—'}</div>${spark(s.history)}
+        <div class="sub">${s.scans} scan${s.scans === 1 ? '' : 's'}${s.failed_scans ? ' · <span class="down">' + s.failed_scans + ' failed</span>' : ''} · last ${ago(s.last_scan)}<br>
+        ${s.fixes_done} fixes done · ${s.fixes_open} open</div></div>
+      ${s.open_list.length ? `<div class="fixes"><b style="color:var(--text)">Open fixes, heaviest first</b><ul>${s.open_list.map(a => `<li>${esc(a.title)}</li>`).join('')}</ul></div>` : ''}
+    </div>`).join('') : '<p class="empty">Signed up but hasn\'t added a website yet. A good moment to reach out.</p>'}`;
+  $('detail').classList.add('on');
+  $('detail').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function feed(list) {
+  const ic = { signup: '👤', site: '🌐', scan: '◎', fail: '⚠️', fix: '✓', billing: '💳' };
+  $('feed').innerHTML = list.length ? list.map(e => `<div class="ev"><div class="ic">${ic[e.kind] || '•'}</div>
+    <div><div class="t">${esc(e.text)}</div><div class="w">${esc(e.who || '')} · ${ago(e.at)}</div></div></div>`).join('')
+    : '<p class="empty">Nothing yet.</p>';
+}
+
+async function load() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return gate('<div class="sec-h">Admin</div><p class="lead">Sign in with the owner account first.</p><a class="btn btn-pri" href="/app/">Sign in</a>');
+  const r = await fetch('/api/admin/overview', { headers: { Authorization: 'Bearer ' + session.access_token } });
+  const out = await r.json().catch(() => ({}));
+  if (r.status === 403) return gate('<div class="sec-h">Not authorized</div><p class="lead">This page is for the S.C.A.L.E. owner.</p><a class="btn ghost" href="/app/">Back to your dashboard</a>');
+  if (!r.ok) return gate('<div class="sec-h">Could not load</div><p class="lead">' + esc(out.error || 'Try again in a minute.') + '</p>');
+  DATA = out;
+  $('gate').style.display = 'none'; $('main').style.display = 'block';
+  $('when').textContent = 'Updated ' + new Date(out.generated_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + ' · refreshes every 2 min';
+  kpis(out.kpis); rows(); feed(out.activity);
+  if (SEL) detail(SEL);
+}
+$('rows').addEventListener('click', e => { const tr = e.target.closest('tr.row'); if (tr) detail(tr.dataset.id); });
+$('q').addEventListener('input', rows);
+$('fplan').addEventListener('change', rows);
+load();
+setInterval(() => { if (!document.hidden) load(); }, 120000);
+</script>
+</body>
+</html>
