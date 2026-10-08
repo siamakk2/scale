@@ -24,6 +24,20 @@ def page(slug, title, desc, h1, intro, sections):
 <meta name="description" content="{html.escape(desc, quote=True)}">
 <link rel="canonical" href="https://scale.siamakconsulting.com/{slug}">
 <meta name="robots" content="index, follow">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="S.C.A.L.E. by Siamak Kalhor">
+<meta property="og:url" content="https://scale.siamakconsulting.com/{slug}">
+<meta property="og:title" content="{html.escape(title, quote=True)}">
+<meta property="og:description" content="{html.escape(desc, quote=True)}">
+<meta property="og:image" content="https://scale.siamakconsulting.com/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="S.C.A.L.E. — See your business the way AI sees it">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{html.escape(title, quote=True)}">
+<meta name="twitter:description" content="{html.escape(desc, quote=True)}">
+<meta name="twitter:image" content="https://scale.siamakconsulting.com/assets/og.png">
 <meta name="theme-color" content="#000000">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
