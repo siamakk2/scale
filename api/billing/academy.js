@@ -43,7 +43,7 @@ module.exports = async function handler(req, res) {
       const session = await s.checkout.sessions.retrieve(id, { expand: ['line_items'] });
       const forAcademy = (session.metadata && session.metadata.app === 'academy') ||
         ((session.line_items && session.line_items.data) || []).some((li) => li.price && li.price.id === PRICE);
-      const paid = forAcademy && session.payment_status === 'paid';
+      const paid = forAcademy && session.status === 'complete' && (session.payment_status === 'paid' || session.payment_status === 'no_payment_required');
       const email = (session.metadata && session.metadata.email) || (session.customer_details && session.customer_details.email) || '';
       return res.status(200).json({ paid, email: paid ? email.toLowerCase() : '', amount: paid ? session.amount_total : 0 });
     }
