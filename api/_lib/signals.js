@@ -173,7 +173,12 @@ function extract(html, host, extras) {
   const person = ld.find((n) => n && n['@type'] === 'Person') || null;
   const orgs = ld.filter((n) => n && /Organization|LocalBusiness|ProfessionalService|Store|Restaurant|Service|Corporation|Clinic|Dentist|Attorney|Agent|Contractor|Physician|Hotel|Cafe|Bakery|Business/.test(String(n['@type']))) || null;
   // Prefer the most specific type (TextileStore over Organization).
-  const org = orgs.find((n) => !/^(Organization|Corporation)$/.test(String([].concat(n['@type'])[0]))) || orgs[0] || null;
+  // A page's Service/Offer nodes describe what is sold, not who sells it. Prefer
+  // the node that actually carries the business facts (an address), then any
+  // specific business type, before falling back to a generic one.
+  const t0 = (n) => String([].concat(n['@type'])[0]);
+  const org = orgs.find((n) => n.address && !/^Service$/.test(t0(n))) ||
+    orgs.find((n) => !/^(Organization|Corporation|Service)$/.test(t0(n))) || orgs[0] || null;
 
   const body = textOf(html);
   const title = (html.match(/<title[^>]*>([\s\S]*?)<\/title>/i) || [])[1];
