@@ -180,13 +180,13 @@ function extract(html, host, extras) {
   const h = headings(html);
 
   return {
-    title: title ? textOf(title) : null,
+    title: title ? decode(textOf(title)) : null,
     metaDescription: decode(metaContent(html, 'description')),
     canonical: (html.match(/<link[^>]+rel=["']canonical["'][^>]*>/i) || []).length
       ? attr(html.match(/<link[^>]+rel=["']canonical["'][^>]*>/i)[0], 'href')
       : null,
     robots: metaContent(html, 'robots'),
-    ogTitle: metaContent(html, 'og:title'),
+    ogTitle: decode(metaContent(html, 'og:title')),
     ogImage: metaContent(html, 'og:image'),
 
     headings: h,
