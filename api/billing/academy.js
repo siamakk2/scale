@@ -1,5 +1,6 @@
 'use strict';
-// Payments for the S.C.A.L.E. Academy course on siamakconsulting.com/academy.
+// Payments for the S.C.A.L.E. Academy course (siamakconsulting.com/academy) and
+// confirmation of done-for-you agency orders (siamakconsulting.com/agency).
 // The course site has no Stripe key of its own, so its server calls this
 // endpoint (server to server) to open a Checkout session and to confirm one.
 // Nothing here can charge anyone: it only creates hosted Checkout pages for
@@ -46,6 +47,18 @@ module.exports = async function handler(req, res) {
       const paid = forAcademy && session.status === 'complete' && (session.payment_status === 'paid' || session.payment_status === 'no_payment_required');
       const email = (session.metadata && session.metadata.email) || (session.customer_details && session.customer_details.email) || '';
       return res.status(200).json({ paid, email: paid ? email.toLowerCase() : '', amount: paid ? session.amount_total : 0 });
+    }
+    if (body.op === 'verifyAgency') {
+      // Agency packages are sold through Stripe Payment Links tagged app=agency.
+      const id = String(body.session_id || '');
+      if (!/^cs_(live|test)_[A-Za-z0-9]+$/.test(id)) return res.status(200).json({ paid: false });
+      const session = await s.checkout.sessions.retrieve(id);
+      const ok = session.metadata && session.metadata.app === 'agency' && session.status === 'complete' &&
+        (session.payment_status === 'paid' || session.payment_status === 'no_payment_required');
+      const cd = session.customer_details || {};
+      return res.status(200).json({ paid: !!ok, pkg: ok ? session.metadata.pkg : '', amount: ok ? session.amount_total : 0,
+        email: ok ? String(cd.email || '').toLowerCase() : '', name: ok ? (cd.name || '') : '', phone: ok ? (cd.phone || '') : '',
+        business: ok ? ((cd.business_name) || '') : '' });
     }
     return res.status(400).json({ error: 'Unknown op.' });
   } catch (e) {
